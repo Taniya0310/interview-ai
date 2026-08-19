@@ -1,0 +1,2 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE IF NOT EXISTS questions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), interview_type text NOT NULL, role text NOT NULL, difficulty text NOT NULL, text text NOT NULL, expected_topics jsonb NOT NULL DEFAULT '[]', is_active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());

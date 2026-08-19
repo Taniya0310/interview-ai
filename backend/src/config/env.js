@@ -1,0 +1,2 @@
+require('dotenv').config();
+module.exports = { port: Number(process.env.PORT || 4000), databaseUrl: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/interviewai', geminiApiKey: process.env.GEMINI_API_KEY || '', geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash', uploadDir: process.env.UPLOAD_DIR || require('path').join(__dirname, '..', '..', 'uploads'), maxVideoBytes: Number(process.env.MAX_VIDEO_BYTES || 262144000) };

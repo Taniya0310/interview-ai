@@ -1,0 +1,2 @@
+const multer=require('multer'); const fs=require('fs'); const path=require('path'); const {uploadDir,maxVideoBytes}=require('../config/env'); fs.mkdirSync(uploadDir,{recursive:true});
+module.exports=multer({storage:multer.diskStorage({destination:(_,__,cb)=>cb(null,uploadDir),filename:(_,file,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname)||'.webm'}`)}),limits:{fileSize:maxVideoBytes},fileFilter:(_,file,cb)=>cb(null,file.mimetype.startsWith('video/'))});

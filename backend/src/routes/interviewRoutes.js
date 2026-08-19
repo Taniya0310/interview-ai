@@ -1,0 +1,1 @@
+const r=require('express').Router(),c=require('../controllers/interviewController'),a=require('../controllers/answerController'),u=require('../middleware/uploadMiddleware');r.post('/',c.create);r.get('/:id',c.get);r.post('/:id/finish',c.finish);r.post('/:interviewId/answers',u.single('video'),a.create);module.exports=r;

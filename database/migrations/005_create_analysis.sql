@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS analyses(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), answer_id uuid UNIQUE NOT NULL REFERENCES answers(id) ON DELETE CASCADE, result jsonb NOT NULL DEFAULT '{}', status text NOT NULL DEFAULT 'pending', completed_at timestamptz);

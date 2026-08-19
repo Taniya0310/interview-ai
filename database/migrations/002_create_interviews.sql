@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS interviews(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), interview_type text NOT NULL, role text NOT NULL, difficulty text NOT NULL, status text NOT NULL DEFAULT 'in_progress', created_at timestamptz NOT NULL DEFAULT now(), completed_at timestamptz);
