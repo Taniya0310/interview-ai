@@ -89,17 +89,36 @@ async function getInterview(id) {
 async function finishInterview(id) {
   const result = await db.query(
     `UPDATE interviews
-     SET status = 'processing'
-     WHERE id = $1 AND status = 'in_progress'
+     SET status = 'completed',
+         completed_at = COALESCE(completed_at, NOW())
+     WHERE id = $1
+       AND status IN ('in_progress', 'processing')
      RETURNING *`,
     [id]
   );
 
-  if (!result.rowCount) {
-    throw Object.assign(new Error('Interview is not active'), { status: 409 });
+  if (result.rowCount) {
+    return result.rows[0];
   }
 
-  return result.rows[0];
+  const existing = await db.query(
+    `SELECT *
+     FROM interviews
+     WHERE id = $1`,
+    [id]
+  );
+
+  if (
+    existing.rowCount &&
+    existing.rows[0].status === 'completed'
+  ) {
+    return existing.rows[0];
+  }
+
+  throw Object.assign(
+    new Error('Interview is not active'),
+    { status: 409 }
+  );
 }
 
 module.exports = {

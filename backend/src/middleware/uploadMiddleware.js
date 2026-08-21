@@ -1,2 +1,69 @@
-const multer=require('multer'); const fs=require('fs'); const path=require('path'); const {uploadDir,maxVideoBytes}=require('../config/env'); fs.mkdirSync(uploadDir,{recursive:true});
-module.exports=multer({storage:multer.diskStorage({destination:(_,__,cb)=>cb(null,uploadDir),filename:(_,file,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname)||'.webm'}`)}),limits:{fileSize:maxVideoBytes},fileFilter:(_,file,cb)=>cb(null,file.mimetype.startsWith('video/'))});
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+
+const {
+  uploadDir,
+  maxVideoBytes,
+} = require('../config/env');
+
+fs.mkdirSync(uploadDir, {
+  recursive: true,
+});
+
+const storage = multer.diskStorage({
+  destination: (_request, _file, callback) => {
+    callback(null, uploadDir);
+  },
+
+  filename: (_request, file, callback) => {
+    const extension =
+      path.extname(file.originalname) || '.webm';
+
+    const filename = `${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}${extension}`;
+
+    callback(null, filename);
+  },
+});
+
+const upload = multer({
+  storage,
+
+  limits: {
+    fileSize: maxVideoBytes,
+  },
+
+ fileFilter: (_request, file, callback) => {
+  const isVideo =
+    file.mimetype.startsWith('video/');
+
+  const isAudio =
+    file.mimetype.startsWith('audio/');
+
+  const isWebmFile =
+    path.extname(file.originalname).toLowerCase() ===
+    '.webm';
+
+  if (isVideo || isAudio) {
+    callback(null, true);
+    return;
+  }
+
+  if (isWebmFile && file.mimetype === 'text/plain') {
+    file.mimetype = 'video/webm';
+    callback(null, true);
+    return;
+  }
+
+  callback(
+    new Error(
+      `Unsupported media type: ${file.mimetype}`
+    ),
+    false
+  );
+},
+});
+
+module.exports = upload;

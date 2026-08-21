@@ -4,7 +4,6 @@ const scoring = require('../utils/scoring');
 const logger = require('../utils/logger');
 
 async function process(answerId) {
-  logger.info('Analysis job started', { answerId });
   const result = await db.query(
     `SELECT a.*, iq.follow_up_count, q.text AS question, q.expected_topics
      FROM answers a
@@ -15,74 +14,246 @@ async function process(answerId) {
   );
 
   const answer = result.rows[0];
-  if (!answer) { logger.error('Analysis answer not found', { answerId }); return; }
+
+  if (!answer) {
+    logger.error('Answer not found', { answerId });
+    return;
+  }
 
   try {
-    await db.query("UPDATE answers SET status = 'processing' WHERE id = $1", [answerId]);
+    await db.query(
+      `UPDATE answers
+       SET status = 'processing'
+       WHERE id = $1`,
+      [answerId]
+    );
 
-    const analysis = await gemini.analyze({
+    // Fast decision used by the live interview.
+    const decision = await gemini.evaluateAnswer({
       filePath: answer.video_path,
       mimeType: answer.mime_type || 'video/webm',
       question: answer.question,
       expectedTopics: answer.expected_topics,
+      
     });
-    logger.info('Gemini analysis completed', { answerId, followUpCount: answer.follow_up_count, needsFollowUp: analysis.needsFollowUp });
+logger.info('Candidate answer received', {
+  answerId,
+  interviewId: answer.interview_id,
+  interviewQuestionId: answer.interview_question_id,
+  isFollowUp: answer.is_follow_up,
+  question: answer.question,
+  transcript: decision.transcript || '[Transcript unavailable]',
+});
+    const needsFollowUp =
+      Boolean(decision.needsFollowUp) &&
+      answer.follow_up_count < 5;
 
-    const needsFollowUp = Boolean(analysis.needsFollowUp) && answer.follow_up_count < 5;
-    analysis.needsFollowUp = needsFollowUp;
-    if (!needsFollowUp) analysis.followUpQuestion = null;
-
+    const liveResult = {
+  transcript: decision.transcript || null,
+  needsFollowUp,
+  followUpQuestion: needsFollowUp
+    ? decision.followUpQuestion
+    : null,
+  questionFeedback: decision.questionFeedback || null,
+  metricsPending: true,
+};
+logger.info('Live interview decision', {
+  answerId,
+  question: answer.question,
+  transcript: liveResult.transcript,
+  needsFollowUp: liveResult.needsFollowUp,
+  followUpQuestion: liveResult.followUpQuestion,
+  questionFeedback: liveResult.questionFeedback,
+});
     await db.query(
-      `INSERT INTO analyses (answer_id, result, status, completed_at)
-       VALUES ($1, $2, 'complete', NOW())
+      `INSERT INTO analyses
+        (answer_id, result, status)
+       VALUES ($1, $2, 'processing')
        ON CONFLICT (answer_id)
-       DO UPDATE SET result = $2, status = 'complete', completed_at = NOW()`,
-      [answerId, JSON.stringify(analysis)]
+       DO UPDATE SET result = $2, status = 'processing'`,
+      [answerId, JSON.stringify(liveResult)]
     );
 
-    await db.query("UPDATE answers SET status = 'analyzed' WHERE id = $1", [answerId]);
-    logger.info('Analysis saved successfully', { answerId, needsFollowUp });
+    await db.query(
+      `UPDATE answers
+       SET status = 'analyzed'
+       WHERE id = $1`,
+      [answerId]
+    );
 
     if (needsFollowUp) {
       await db.query(
         `UPDATE interview_questions
          SET follow_up_count = follow_up_count + 1
-         WHERE id = (SELECT interview_question_id FROM answers WHERE id = $1)`,
-        [answerId]
+         WHERE id = $1`,
+        [answer.interview_question_id]
       );
     } else {
       await db.query(
         `UPDATE interview_questions
          SET is_satisfied = TRUE
-         WHERE id = (SELECT interview_question_id FROM answers WHERE id = $1)`,
-        [answerId]
+         WHERE id = $1`,
+        [answer.interview_question_id]
       );
+
       await finalizeInterview(answer.interview_id);
     }
+
+    // Slow metrics run after the live decision is already available.
+  if (!needsFollowUp) {
+  runDetailedQuestionAnalysis(
+    answer.interview_question_id,
+    answer.interview_id
+  ).catch((error) => {
+    logger.error('Detailed question analysis failed', {
+      interviewQuestionId: answer.interview_question_id,
+      interviewId: answer.interview_id,
+      error: error.message,
+    });
+  });
+}
   } catch (error) {
-    logger.error('Analysis job failed', { answerId, error: error.message, stack: error.stack });
+    logger.error('Answer analysis failed', {
+      answerId,
+      error: error.message,
+    });
+
     await db.query(
-      "UPDATE answers SET status = 'failed', error_message = $2 WHERE id = $1",
+      `UPDATE answers
+       SET status = 'failed',
+           error_message = $2
+       WHERE id = $1`,
       [answerId, error.message]
     );
   }
 }
 
+async function runDetailedQuestionAnalysis(
+  interviewQuestionId,
+  interviewId
+) {
+  const result = await db.query(
+    `SELECT
+       a.id AS answer_id,
+       a.video_path,
+       a.mime_type,
+       a.is_follow_up,
+       a.created_at,
+       q.text AS question,
+       q.expected_topics,
+       an.result
+     FROM answers a
+     JOIN interview_questions iq
+       ON iq.id = a.interview_question_id
+     JOIN questions q
+       ON q.id = iq.question_id
+     LEFT JOIN analyses an
+       ON an.answer_id = a.id
+     WHERE a.interview_question_id = $1
+     ORDER BY a.created_at`,
+    [interviewQuestionId]
+  );
+
+  if (!result.rowCount) {
+    logger.info('No answers found for detailed analysis', {
+  interviewQuestionId,
+});
+
+    return;
+  }
+
+  const firstAnswer = result.rows[0];
+
+  const transcripts = result.rows
+    .map((row) => {
+      const analysis =
+        typeof row.result === 'string'
+          ? JSON.parse(row.result)
+          : row.result;
+
+      return {
+        answerId: row.answer_id,
+        isFollowUp: row.is_follow_up,
+        transcript: analysis?.transcript || '',
+      };
+    })
+    .filter((item) => item.transcript);
+
+  logger.info('Starting detailed question analysis', {
+    interviewId,
+    interviewQuestionId,
+    question: firstAnswer.question,
+    answerCount: result.rows.length,
+    transcripts,
+  });
+
+  const detailed = await gemini.analyze({
+    filePath: firstAnswer.video_path,
+    mimeType: firstAnswer.mime_type || 'video/webm',
+    question: firstAnswer.question,
+    expectedTopics: firstAnswer.expected_topics,
+    previousAnswers: transcripts,
+  });
+
+  logger.info('Detailed question analysis completed', {
+    interviewId,
+    interviewQuestionId,
+    technicalCorrectness: detailed.technicalCorrectness,
+    relevance: detailed.relevance,
+    communication: detailed.communication,
+    structure: detailed.structure,
+    speakingBehavior: detailed.speakingBehavior,
+    presentation: detailed.presentation,
+    speechMetrics: detailed.speechMetrics,
+    strengths: detailed.strengths,
+    weaknesses: detailed.weaknesses,
+    recommendations: detailed.recommendations,
+    feedback: detailed.feedback,
+  });
+
+  const finalResult = {
+    ...detailed,
+    question: firstAnswer.question,
+    answerCount: result.rows.length,
+    transcripts,
+    metricsPending: false,
+  };
+
+  await db.query(
+    `UPDATE analyses
+     SET result = $2,
+         status = 'complete',
+         completed_at = NOW()
+     WHERE answer_id = $1`,
+    [
+      firstAnswer.answer_id,
+      JSON.stringify(finalResult),
+    ]
+  );
+}
+
 async function finalizeInterview(interviewId) {
   const result = await db.query(
-    `SELECT COUNT(*) FILTER (WHERE iq.is_satisfied) AS satisfied,
-            COUNT(*) AS total
-     FROM interview_questions iq
-     WHERE iq.interview_id = $1`,
+    `SELECT
+       COUNT(*) FILTER (WHERE is_satisfied = TRUE) AS satisfied,
+       COUNT(*) AS total
+     FROM interview_questions
+     WHERE interview_id = $1`,
     [interviewId]
   );
 
   const row = result.rows[0];
-  if (Number(row.total) > 0 && Number(row.satisfied) === Number(row.total)) {
+
+  if (
+    Number(row.total) > 0 &&
+    Number(row.satisfied) === Number(row.total)
+  ) {
     await db.query(
       `UPDATE interviews
-       SET status = 'completed', completed_at = NOW()
-       WHERE id = $1 AND status = 'processing'`,
+       SET status = 'completed',
+           completed_at = NOW()
+       WHERE id = $1
+         AND status IN ('in_progress', 'processing')`,
       [interviewId]
     );
   }
@@ -90,22 +261,50 @@ async function finalizeInterview(interviewId) {
 
 async function report(interviewId) {
   const result = await db.query(
-    `SELECT i.id, i.status, i.created_at, i.completed_at,
-            iq.position, iq.follow_up_count, iq.is_satisfied,
-            q.text AS question, a.id AS answer_id, a.status AS answer_status,
-            a.is_follow_up, an.result
+    `SELECT
+       i.id,
+       i.status,
+       i.created_at,
+       i.completed_at,
+       iq.position,
+       iq.follow_up_count,
+       iq.is_satisfied,
+       q.text AS question,
+       a.id AS answer_id,
+       a.status AS answer_status,
+       a.is_follow_up,
+       an.result
      FROM interviews i
-     JOIN interview_questions iq ON iq.interview_id = i.id
-     JOIN questions q ON q.id = iq.question_id
-     LEFT JOIN answers a ON a.interview_question_id = iq.id
-     LEFT JOIN analyses an ON an.answer_id = a.id
+     JOIN interview_questions iq
+       ON iq.interview_id = i.id
+     JOIN questions q
+       ON q.id = iq.question_id
+     LEFT JOIN answers a
+       ON a.interview_question_id = iq.id
+     LEFT JOIN analyses an
+       ON an.answer_id = a.id
      WHERE i.id = $1
      ORDER BY iq.position, a.created_at`,
     [interviewId]
   );
 
   if (!result.rowCount) return null;
-  const analyses = result.rows.map((row) => row.result).filter(Boolean);
+
+  const analyses = result.rows
+  .map((row) => {
+    const value =
+      typeof row.result === 'string'
+        ? JSON.parse(row.result)
+        : row.result;
+
+    return value?.metricsPending === false
+      ? value
+      : null;
+  })
+  .filter(Boolean)
+    .map((value) =>
+      typeof value === 'string' ? JSON.parse(value) : value
+    );
 
   return {
     id: interviewId,
@@ -115,9 +314,15 @@ async function report(interviewId) {
     scores: scoring.average(analyses),
     answers: result.rows.map((row) => ({
       ...row,
-      result: typeof row.result === 'string' ? JSON.parse(row.result) : row.result,
+      result:
+        typeof row.result === 'string'
+          ? JSON.parse(row.result)
+          : row.result,
     })),
   };
 }
 
-module.exports = { process, report };
+module.exports = {
+  process,
+  report,
+};

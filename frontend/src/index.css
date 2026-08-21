@@ -2,3 +2,12 @@
 body { margin: 0; background: #f4f7fb; color: #182230; font: 16px system-ui, sans-serif; }
 .card { max-width: 900px; margin: 40px auto; padding: 32px; background: white; border-radius: 18px; box-shadow: 0 10px 35px #19304d18; }
 .narrow { max-width: 520px; } label { display: block; margin: 18px 0; text-transform: capitalize; font-weight: 600; } input { display: block; width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ccd6e2; border-radius: 8px; font-size: 16px; } button { margin: 8px 8px 8px 0; padding: 12px 18px; border: 0; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; font-weight: 600; } button:disabled { opacity: .5; cursor: not-allowed; } .secondary { background: #64748b; } .danger { background: #dc2626; } .small { padding: 7px 10px; } .link { background: transparent; color: #2563eb; padding-left: 0; } .live video { display: block; width: min(100%, 640px); margin: 24px auto; background: #101827; border-radius: 12px; } .live h1 { font-size: 28px; } .scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 24px 0; } .scores div { padding: 18px; background: #eef4ff; border-radius: 10px; text-align: center; } .scores strong, .scores small { display: block; } .scores strong { font-size: 30px; color: #2563eb; } .feedback { border-top: 1px solid #e2e8f0; padding: 18px 0; } pre { white-space: pre-wrap; background: #f8fafc; padding: 14px; overflow: auto; } .row { display: flex; justify-content: space-between; gap: 12px; align-items: center; border-top: 1px solid #e2e8f0; padding: 14px 0; }
+.status {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.error {
+  color: #dc2626;
+  font-weight: 600;
+}
