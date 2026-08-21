@@ -2,13 +2,20 @@ const db = require('../config/database');
 const gemini = require('./geminiService');
 const scoring = require('../utils/scoring');
 const logger = require('../utils/logger');
+const transcriptionService = require("./transcriptionService");
 
-async function process(answerId) {
+async function processFastAnswer(answerId) {
   const result = await db.query(
-    `SELECT a.*, iq.follow_up_count, q.text AS question, q.expected_topics
+    `SELECT
+       a.*,
+       iq.follow_up_count,
+       q.text AS question,
+       q.expected_topics
      FROM answers a
-     JOIN interview_questions iq ON iq.id = a.interview_question_id
-     JOIN questions q ON q.id = iq.question_id
+     JOIN interview_questions iq
+       ON iq.id = a.interview_question_id
+     JOIN questions q
+       ON q.id = iq.question_id
      WHERE a.id = $1`,
     [answerId]
   );
@@ -16,7 +23,7 @@ async function process(answerId) {
   const answer = result.rows[0];
 
   if (!answer) {
-    logger.error('Answer not found', { answerId });
+    logger.error("Answer not found", { answerId });
     return;
   }
 
@@ -28,49 +35,51 @@ async function process(answerId) {
       [answerId]
     );
 
-    // Fast decision used by the live interview.
-    const decision = await gemini.evaluateAnswer({
-      filePath: answer.video_path,
-      mimeType: answer.mime_type || 'video/webm',
-      question: answer.question,
-      expectedTopics: answer.expected_topics,
-      
+    /*
+     * One Gemini call:
+     * video → audio → transcript + evaluation
+     */
+    const decision =
+      await transcriptionService.evaluateVideoAudio({
+        videoPath: answer.video_path,
+        question: answer.question,
+        expectedTopics: answer.expected_topics,
+      });
+
+    const transcript = decision.transcript || "";
+
+    logger.info("Combined audio evaluation completed", {
+      answerId,
+      interviewId: answer.interview_id,
+      transcript: transcript || "[Transcript unavailable]",
+      needsFollowUp: decision.needsFollowUp,
+      followUpQuestion: decision.followUpQuestion,
+      questionFeedback: decision.questionFeedback,
     });
-logger.info('Candidate answer received', {
-  answerId,
-  interviewId: answer.interview_id,
-  interviewQuestionId: answer.interview_question_id,
-  isFollowUp: answer.is_follow_up,
-  question: answer.question,
-  transcript: decision.transcript || '[Transcript unavailable]',
-});
+
     const needsFollowUp =
       Boolean(decision.needsFollowUp) &&
       answer.follow_up_count < 5;
 
     const liveResult = {
-  transcript: decision.transcript || null,
-  needsFollowUp,
-  followUpQuestion: needsFollowUp
-    ? decision.followUpQuestion
-    : null,
-  questionFeedback: decision.questionFeedback || null,
-  metricsPending: true,
-};
-logger.info('Live interview decision', {
-  answerId,
-  question: answer.question,
-  transcript: liveResult.transcript,
-  needsFollowUp: liveResult.needsFollowUp,
-  followUpQuestion: liveResult.followUpQuestion,
-  questionFeedback: liveResult.questionFeedback,
-});
+      transcript,
+      needsFollowUp,
+      followUpQuestion: needsFollowUp
+        ? decision.followUpQuestion
+        : null,
+      questionFeedback:
+        decision.questionFeedback || null,
+      metricsPending: true,
+    };
+
     await db.query(
       `INSERT INTO analyses
         (answer_id, result, status)
        VALUES ($1, $2, 'processing')
        ON CONFLICT (answer_id)
-       DO UPDATE SET result = $2, status = 'processing'`,
+       DO UPDATE SET
+         result = $2,
+         status = 'processing'`,
       [answerId, JSON.stringify(liveResult)]
     );
 
@@ -97,23 +106,22 @@ logger.info('Live interview decision', {
       );
 
       await finalizeInterview(answer.interview_id);
-    }
 
-    // Slow metrics run after the live decision is already available.
-  if (!needsFollowUp) {
-  runDetailedQuestionAnalysis(
-    answer.interview_question_id,
-    answer.interview_id
-  ).catch((error) => {
-    logger.error('Detailed question analysis failed', {
-      interviewQuestionId: answer.interview_question_id,
-      interviewId: answer.interview_id,
-      error: error.message,
-    });
-  });
-}
+      /*
+       * Detailed video analysis runs separately in the background.
+       */
+      runDetailedQuestionAnalysis(
+        answer.interview_question_id,
+        answer.interview_id
+      ).catch((error) => {
+        logger.error("Detailed video analysis failed", {
+          answerId,
+          error: error.message,
+        });
+      });
+    }
   } catch (error) {
-    logger.error('Answer analysis failed', {
+    logger.error("Fast audio analysis failed", {
       answerId,
       error: error.message,
     });
@@ -127,7 +135,6 @@ logger.info('Live interview decision', {
     );
   }
 }
-
 async function runDetailedQuestionAnalysis(
   interviewQuestionId,
   interviewId
@@ -323,6 +330,6 @@ async function report(interviewId) {
 }
 
 module.exports = {
-  process,
+  processFastAnswer,
   report,
 };

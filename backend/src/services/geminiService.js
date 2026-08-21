@@ -90,6 +90,127 @@ async function sendVideoToGemini({
   return parsed;
 }
 
+async function sendAudioToGemini({
+  filePath,
+  mimeType = "audio/wav",
+  prompt,
+  timeout = 60000,
+}) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Audio file not found: ${filePath}`);
+  }
+
+  const audioBuffer = fs.readFileSync(filePath);
+  const audioBase64 = audioBuffer.toString("base64");
+
+  logger.info("Sending audio to Gemini", {
+    filePath,
+    mimeType,
+    bytes: audioBuffer.length,
+    model: geminiModel,
+  });
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType,
+                  data: audioBase64,
+                },
+              },
+            ],
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(timeout),
+    }
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+
+    logger.error("Gemini audio request failed", {
+      status: response.status,
+      body: errorBody,
+    });
+
+    throw new Error(
+      `Gemini audio request failed (${response.status})`
+    );
+  }
+
+  const data = await response.json();
+  return parseGeminiJson(data);
+}
+async function evaluateAudioAnswer({
+  filePath,
+  mimeType = "audio/wav",
+  question,
+  expectedTopics = [],
+}) {
+  if (!geminiApiKey) {
+    return {
+      transcript: "",
+      needsFollowUp: false,
+      followUpQuestion: null,
+      questionFeedback: "Gemini is not configured",
+    };
+  }
+
+  const prompt = `
+Evaluate the candidate's spoken interview answer.
+
+Question:
+${question}
+
+Expected topics:
+${JSON.stringify(expectedTopics)}
+
+Return ONLY valid JSON:
+{
+  "transcript": "complete transcript of the candidate answer",
+  "needsFollowUp": true,
+  "followUpQuestion": "string or null",
+  "questionFeedback": "short feedback"
+}
+
+Rules:
+- Transcribe the complete spoken answer.
+- needsFollowUp must be true or false.
+- Ask a follow-up if the answer is incomplete, unclear, or incorrect.
+- If the answer is sufficient, use false and null.
+`;
+
+  const result = await sendAudioToGemini({
+    filePath,
+    mimeType,
+    prompt,
+  });
+
+  logger.info("Combined audio evaluation completed", {
+    transcript: result.transcript || "[Transcript unavailable]",
+    needsFollowUp: result.needsFollowUp,
+    followUpQuestion: result.followUpQuestion,
+    questionFeedback: result.questionFeedback,
+  });
+
+  return {
+    transcript: result.transcript || "",
+    needsFollowUp: Boolean(result.needsFollowUp),
+    followUpQuestion: result.followUpQuestion || null,
+    questionFeedback: result.questionFeedback || null,
+  };
+}
 function isRetryableError(error) {
   return (
     error?.status === 429 ||
@@ -185,6 +306,138 @@ Return ONLY valid JSON:
   return result;
 }
 
+
+async function transcribeAudio({
+  filePath,
+  mimeType = "audio/wav",
+}) {
+  if (!geminiApiKey) {
+    logger.warn("Gemini API key is missing");
+    return "";
+  }
+
+  const prompt = `
+Transcribe the candidate's spoken interview answer.
+
+Rules:
+- Return only valid JSON.
+- Do not add explanations.
+- Preserve the exact meaning.
+- Do not invent missing words.
+
+Return:
+{
+  "transcript": "complete transcript"
+}
+`;
+
+  const result = await sendAudioToGemini({
+    filePath,
+    mimeType,
+    prompt,
+  });
+
+  const transcript = result.transcript || "";
+
+  logger.info("Audio transcript generated", {
+    transcript,
+  });
+
+  return transcript;
+}
+async function sendTextToGemini({
+  prompt,
+  timeout = 60000,
+}) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(timeout),
+    }
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+
+    logger.error("Gemini text request failed", {
+      status: response.status,
+      body: errorBody,
+    });
+
+    throw new Error(
+      `Gemini text request failed (${response.status})`
+    );
+  }
+
+  const data = await response.json();
+
+  return parseGeminiJson(data);
+}
+async function evaluateTranscript({
+  transcript,
+  question,
+  expectedTopics,
+}) {
+  if (!geminiApiKey) {
+    return {
+      needsFollowUp: false,
+      followUpQuestion: null,
+      questionFeedback: "Gemini is not configured",
+    };
+  }
+
+  const prompt = `
+Evaluate the candidate's interview answer using only the transcript.
+
+Question:
+${question}
+
+Expected topics:
+${JSON.stringify(expectedTopics || [])}
+
+Candidate transcript:
+${transcript || "[No transcript available]"}
+
+Decide whether the candidate answered the question sufficiently.
+
+Return ONLY valid JSON:
+{
+  "needsFollowUp": true,
+  "followUpQuestion": "string or null",
+  "questionFeedback": "short feedback"
+}
+
+Rules:
+- needsFollowUp must be true or false.
+- Ask a follow-up only when the answer is incomplete, unclear, or incorrect.
+- If the answer is sufficient, return false and followUpQuestion as null.
+`;
+
+  const result = await sendTextToGemini({
+    prompt,
+    timeout: 60000,
+  });
+
+  logger.info("Transcript evaluated by Gemini", {
+    transcript,
+    needsFollowUp: result.needsFollowUp,
+    followUpQuestion: result.followUpQuestion,
+    questionFeedback: result.questionFeedback,
+  });
+
+  return result;
+}
 async function analyze({
   filePath,
   mimeType,
@@ -287,5 +540,8 @@ All numeric scores must be between 0 and 100.
 
 module.exports = {
   evaluateAnswer,
+  evaluateAudioAnswer,
+  evaluateTranscript,
   analyze,
+  transcribeAudio,
 };
