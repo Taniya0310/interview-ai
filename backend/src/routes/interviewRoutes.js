@@ -1,1 +1,24 @@
-const r=require('express').Router(),c=require('../controllers/interviewController'),a=require('../controllers/answerController'),u=require('../middleware/uploadMiddleware');r.post('/',c.create);r.get('/:id',c.get);r.post('/:id/finish',c.finish);r.post('/:interviewId/answers',u.single('video'),a.create);module.exports=r;
+const r = require("express").Router();
+
+const interviewController = require("../controllers/interviewController");
+const answerController = require("../controllers/answerController");
+const uploadMiddleware = require("../middleware/uploadMiddleware");
+
+r.get("/", interviewController.list);
+
+r.post("/", interviewController.create);
+
+r.get("/:id", interviewController.get);
+
+r.post(
+  "/:id/finish",
+  interviewController.finish
+);
+
+r.post(
+  "/:interviewId/answers",
+  uploadMiddleware.single("video"),
+  answerController.create
+);
+
+module.exports = r;

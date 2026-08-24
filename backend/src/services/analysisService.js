@@ -1,7 +1,7 @@
-const db = require('../config/database');
-const gemini = require('./geminiService');
-const scoring = require('../utils/scoring');
-const logger = require('../utils/logger');
+const db = require("../config/database");
+const gemini = require("./geminiService");
+const scoring = require("../utils/scoring");
+const logger = require("../utils/logger");
 const transcriptionService = require("./transcriptionService");
 
 async function processFastAnswer(answerId) {
@@ -10,7 +10,9 @@ async function processFastAnswer(answerId) {
        a.*,
        iq.follow_up_count,
        q.text AS question,
-       q.expected_topics
+       q.expected_topics,
+       q.reference_answer,
+       q.answer_key_points
      FROM answers a
      JOIN interview_questions iq
        ON iq.id = a.interview_question_id
@@ -35,15 +37,13 @@ async function processFastAnswer(answerId) {
       [answerId]
     );
 
-    /*
-     * One Gemini call:
-     * video → audio → transcript + evaluation
-     */
     const decision =
       await transcriptionService.evaluateVideoAudio({
         videoPath: answer.video_path,
         question: answer.question,
         expectedTopics: answer.expected_topics,
+        referenceAnswer: answer.reference_answer,
+        answerKeyPoints: answer.answer_key_points,
       });
 
     const transcript = decision.transcript || "";
@@ -52,6 +52,9 @@ async function processFastAnswer(answerId) {
       answerId,
       interviewId: answer.interview_id,
       transcript: transcript || "[Transcript unavailable]",
+      passed: decision.passed,
+      score: decision.score,
+      missingPoints: decision.missingPoints,
       needsFollowUp: decision.needsFollowUp,
       followUpQuestion: decision.followUpQuestion,
       questionFeedback: decision.questionFeedback,
@@ -63,6 +66,9 @@ async function processFastAnswer(answerId) {
 
     const liveResult = {
       transcript,
+      passed: Boolean(decision.passed),
+      score: decision.score || 0,
+      missingPoints: decision.missingPoints || [],
       needsFollowUp,
       followUpQuestion: needsFollowUp
         ? decision.followUpQuestion
@@ -107,9 +113,6 @@ async function processFastAnswer(answerId) {
 
       await finalizeInterview(answer.interview_id);
 
-      /*
-       * Detailed video analysis runs separately in the background.
-       */
       runDetailedQuestionAnalysis(
         answer.interview_question_id,
         answer.interview_id
@@ -135,6 +138,7 @@ async function processFastAnswer(answerId) {
     );
   }
 }
+
 async function runDetailedQuestionAnalysis(
   interviewQuestionId,
   interviewId
@@ -162,9 +166,9 @@ async function runDetailedQuestionAnalysis(
   );
 
   if (!result.rowCount) {
-    logger.info('No answers found for detailed analysis', {
-  interviewQuestionId,
-});
+    logger.info("No answers found for detailed analysis", {
+      interviewQuestionId,
+    });
 
     return;
   }
@@ -174,19 +178,19 @@ async function runDetailedQuestionAnalysis(
   const transcripts = result.rows
     .map((row) => {
       const analysis =
-        typeof row.result === 'string'
+        typeof row.result === "string"
           ? JSON.parse(row.result)
           : row.result;
 
       return {
         answerId: row.answer_id,
         isFollowUp: row.is_follow_up,
-        transcript: analysis?.transcript || '',
+        transcript: analysis?.transcript || "",
       };
     })
     .filter((item) => item.transcript);
 
-  logger.info('Starting detailed question analysis', {
+  logger.info("Starting detailed question analysis", {
     interviewId,
     interviewQuestionId,
     question: firstAnswer.question,
@@ -196,13 +200,13 @@ async function runDetailedQuestionAnalysis(
 
   const detailed = await gemini.analyze({
     filePath: firstAnswer.video_path,
-    mimeType: firstAnswer.mime_type || 'video/webm',
+    mimeType: firstAnswer.mime_type || "video/webm",
     question: firstAnswer.question,
     expectedTopics: firstAnswer.expected_topics,
     previousAnswers: transcripts,
   });
 
-  logger.info('Detailed question analysis completed', {
+  logger.info("Detailed question analysis completed", {
     interviewId,
     interviewQuestionId,
     technicalCorrectness: detailed.technicalCorrectness,
@@ -242,7 +246,9 @@ async function runDetailedQuestionAnalysis(
 async function finalizeInterview(interviewId) {
   const result = await db.query(
     `SELECT
-       COUNT(*) FILTER (WHERE is_satisfied = TRUE) AS satisfied,
+       COUNT(*) FILTER (
+         WHERE is_satisfied = TRUE
+       ) AS satisfied,
        COUNT(*) AS total
      FROM interview_questions
      WHERE interview_id = $1`,
@@ -295,22 +301,26 @@ async function report(interviewId) {
     [interviewId]
   );
 
-  if (!result.rowCount) return null;
+  if (!result.rowCount) {
+    return null;
+  }
 
   const analyses = result.rows
-  .map((row) => {
-    const value =
-      typeof row.result === 'string'
-        ? JSON.parse(row.result)
-        : row.result;
+    .map((row) => {
+      const value =
+        typeof row.result === "string"
+          ? JSON.parse(row.result)
+          : row.result;
 
-    return value?.metricsPending === false
-      ? value
-      : null;
-  })
-  .filter(Boolean)
+      return value?.metricsPending === false
+        ? value
+        : null;
+    })
+    .filter(Boolean)
     .map((value) =>
-      typeof value === 'string' ? JSON.parse(value) : value
+      typeof value === "string"
+        ? JSON.parse(value)
+        : value
     );
 
   return {
@@ -322,7 +332,7 @@ async function report(interviewId) {
     answers: result.rows.map((row) => ({
       ...row,
       result:
-        typeof row.result === 'string'
+        typeof row.result === "string"
           ? JSON.parse(row.result)
           : row.result,
     })),

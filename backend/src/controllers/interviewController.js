@@ -19,6 +19,17 @@ exports.get = async (req, res, next) => {
   }
 };
 
+exports.list = async (req, res, next) => {
+  try {
+    const interviews =
+      await interviewService.list();
+
+    res.json(interviews);
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.finish = async (req, res, next) => {
   try {
     await interviewService.finish(req.params.id);

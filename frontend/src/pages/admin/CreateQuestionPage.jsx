@@ -30,13 +30,15 @@ function CreateQuestionPage({
   onBack,
   onCreated,
 }) {
-  const [form, setForm] = useState({
-    interviewType: "technical",
-    role: "backend-developer",
-    difficulty: "beginner",
-    text: "",
-    expectedTopics: "",
-  });
+ const [form, setForm] = useState({
+  interviewType: "technical",
+  role: "backend-developer",
+  difficulty: "beginner",
+  text: "",
+  expectedTopics: "",
+  referenceAnswer: "",
+  answerKeyPoints: "",
+});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -66,46 +68,54 @@ function CreateQuestionPage({
     setError("");
     setSuccess("");
 
-    try {
-      const expectedTopics = form.expectedTopics
-        .split(",")
-        .map((topic) => topic.trim())
-        .filter(Boolean);
+   try {
+  const expectedTopics = form.expectedTopics
+    .split(",")
+    .map((topic) => topic.trim())
+    .filter(Boolean);
 
-      await api("/questions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          interviewType: form.interviewType.trim(),
-          role: form.role.trim(),
-          difficulty: form.difficulty.trim(),
-          text: form.text.trim(),
-          expectedTopics,
-        }),
-      });
+  const answerKeyPoints = form.answerKeyPoints
+    .split(",")
+    .map((point) => point.trim())
+    .filter(Boolean);
 
-      setSuccess("Question created successfully.");
+  await api("/questions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      interviewType: form.interviewType.trim(),
+      role: form.role.trim(),
+      difficulty: form.difficulty.trim(),
+      text: form.text.trim(),
+      expectedTopics,
+      referenceAnswer: form.referenceAnswer.trim(),
+      answerKeyPoints,
+    }),
+  });
 
-      setForm({
-        interviewType: "technical",
-        role: "backend-developer",
-        difficulty: "beginner",
-        text: "",
-        expectedTopics: "",
-      });
+  setSuccess("Question created successfully.");
 
-      if (onCreated) {
-        onCreated();
-      }
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
+  setForm({
+    interviewType: "technical",
+    role: "backend-developer",
+    difficulty: "beginner",
+    text: "",
+    expectedTopics: "",
+    referenceAnswer: "",
+    answerKeyPoints: "",
+  });
+
+  if (onCreated) {
+    onCreated();
   }
-
+} catch (requestError) {
+  setError(requestError.message);
+} finally {
+  setLoading(false);
+}
+  }
   return (
     <main className="admin-page">
       <div className="admin-container admin-form-container">
@@ -241,7 +251,44 @@ function CreateQuestionPage({
                 Separate multiple topics with commas.
               </span>
             </div>
+<div className="admin-form-group">
+  <label htmlFor="referenceAnswer">
+    Reference Answer
+  </label>
 
+  <textarea
+    id="referenceAnswer"
+    name="referenceAnswer"
+    value={form.referenceAnswer}
+    onChange={handleChange}
+    placeholder="Enter the ideal answer..."
+    rows={8}
+    required
+  />
+
+  <span className="admin-field-hint">
+    This answer will be used to evaluate the candidate's audio.
+  </span>
+</div>
+
+<div className="admin-form-group">
+  <label htmlFor="answerKeyPoints">
+    Required Answer Points
+  </label>
+
+  <textarea
+    id="answerKeyPoints"
+    name="answerKeyPoints"
+    value={form.answerKeyPoints}
+    onChange={handleChange}
+    placeholder="Authentication, validation, error handling"
+    rows={4}
+  />
+
+  <span className="admin-field-hint">
+    Separate important points with commas.
+  </span>
+</div>
             {/* Error */}
             {error && (
               <div className="admin-message admin-message-error">

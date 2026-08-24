@@ -37,6 +37,8 @@ function EditQuestionPage({
     difficulty: "beginner",
     text: "",
     expectedTopics: "",
+    referenceAnswer: "",
+    answerKeyPoints: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,8 @@ function EditQuestionPage({
         const data = await api(`/questions/${questionId}`);
 
         setForm({
-          interviewType: data.interview_type || data.interviewType || "",
+          interviewType:
+            data.interview_type || data.interviewType || "",
           role: data.role || "",
           difficulty: data.difficulty || "beginner",
           text: data.text || "",
@@ -64,6 +67,17 @@ function EditQuestionPage({
             ? data.expected_topics.join(", ")
             : Array.isArray(data.expectedTopics)
               ? data.expectedTopics.join(", ")
+              : "",
+          referenceAnswer:
+            data.reference_answer ||
+            data.referenceAnswer ||
+            "",
+          answerKeyPoints: Array.isArray(
+            data.answer_key_points
+          )
+            ? data.answer_key_points.join(", ")
+            : Array.isArray(data.answerKeyPoints)
+              ? data.answerKeyPoints.join(", ")
               : "",
         });
       } catch (requestError) {
@@ -96,6 +110,11 @@ function EditQuestionPage({
       return;
     }
 
+    if (!form.referenceAnswer.trim()) {
+      setError("Please enter a reference answer.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSuccess("");
@@ -106,8 +125,13 @@ function EditQuestionPage({
         .map((topic) => topic.trim())
         .filter(Boolean);
 
+      const answerKeyPoints = form.answerKeyPoints
+        .split(",")
+        .map((point) => point.trim())
+        .filter(Boolean);
+
       await api(`/questions/${questionId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
@@ -117,6 +141,8 @@ function EditQuestionPage({
           difficulty: form.difficulty.trim(),
           text: form.text.trim(),
           expectedTopics,
+          referenceAnswer: form.referenceAnswer.trim(),
+          answerKeyPoints,
         }),
       });
 
@@ -147,7 +173,6 @@ function EditQuestionPage({
   return (
     <main className="admin-page">
       <div className="admin-container admin-form-container">
-
         <header className="admin-header">
           <div>
             <p className="admin-eyebrow">
@@ -172,7 +197,6 @@ function EditQuestionPage({
 
         <section className="admin-form-card">
           <form onSubmit={handleSubmit}>
-
             <div className="admin-form-group">
               <label htmlFor="interviewType">
                 Interview Type
@@ -260,6 +284,45 @@ function EditQuestionPage({
               </span>
             </div>
 
+            <div className="admin-form-group">
+              <label htmlFor="referenceAnswer">
+                Reference Answer
+              </label>
+
+              <textarea
+                id="referenceAnswer"
+                name="referenceAnswer"
+                value={form.referenceAnswer}
+                onChange={handleChange}
+                placeholder="Enter the ideal answer..."
+                rows={8}
+                required
+              />
+
+              <span className="admin-field-hint">
+                Used to evaluate the candidate's audio answer.
+              </span>
+            </div>
+
+            <div className="admin-form-group">
+              <label htmlFor="answerKeyPoints">
+                Required Answer Points
+              </label>
+
+              <textarea
+                id="answerKeyPoints"
+                name="answerKeyPoints"
+                value={form.answerKeyPoints}
+                onChange={handleChange}
+                placeholder="Authentication, validation, error handling"
+                rows={4}
+              />
+
+              <span className="admin-field-hint">
+                Separate important points with commas.
+              </span>
+            </div>
+
             {error && (
               <div className="admin-message admin-message-error">
                 {error}
@@ -290,10 +353,8 @@ function EditQuestionPage({
                 {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
-
           </form>
         </section>
-
       </div>
     </main>
   );

@@ -6,21 +6,17 @@ const API =
   "http://localhost:4000/api";
 
 async function api(path, options = {}) {
-  const response = await fetch(
-    `${API}${path}`,
-    options
-  );
+  const response = await fetch(`${API}${path}`, options);
 
   if (!response.ok) {
     let message = "Request failed";
 
     try {
       const data = await response.json();
-      message =
-        data.error ||
-        data.message ||
-        message;
-    } catch {}
+      message = data.error || data.message || message;
+    } catch {
+      // Ignore invalid response body
+    }
 
     throw new Error(message);
   }
@@ -46,39 +42,11 @@ export default function InterviewSetupPage() {
   const [interviewType, setInterviewType] =
     useState("technical");
 
-  const [role, setRole] =
-    useState("backend-developer");
-
-  const [difficulty, setDifficulty] =
-    useState("beginner");
-
-  const [questionCount, setQuestionCount] =
-    useState(3);
-
   const [loading, setLoading] =
     useState(false);
 
   const [error, setError] =
     useState("");
-
-  function handleQuestionCountChange(
-    event
-  ) {
-    const value = Number(
-      event.target.value
-    );
-
-    if (!Number.isFinite(value)) {
-      return;
-    }
-
-    setQuestionCount(
-      Math.min(
-        100,
-        Math.max(1, value)
-      )
-    );
-  }
 
   async function handleStart(event) {
     event.preventDefault();
@@ -89,20 +57,9 @@ export default function InterviewSetupPage() {
 
     setError("");
 
-    const count = Math.min(
-      100,
-      Math.max(
-        1,
-        Number(questionCount) || 3
-      )
-    );
-
     try {
       setLoading(true);
 
-      /*
-       * Start fresh.
-       */
       sessionStorage.removeItem(
         "currentInterview"
       );
@@ -115,26 +72,19 @@ export default function InterviewSetupPage() {
         "currentReport"
       );
 
-      /*
-       * Keep the request body compatible
-       * with the existing interview API.
-       */
-      const interview =
-        await api("/interviews", {
+      const interview = await api(
+        "/interviews",
+        {
           method: "POST",
-
           headers: {
             "Content-Type":
               "application/json",
           },
-
           body: JSON.stringify({
             interviewType,
-            role,
-            difficulty,
-            questionCount: count,
           }),
-        });
+        }
+      );
 
       const interviewId =
         interview?.id ??
@@ -147,11 +97,6 @@ export default function InterviewSetupPage() {
         );
       }
 
-      /*
-       * Save the complete interview because
-       * DeviceCheckPage and LiveInterviewPage
-       * use it.
-       */
       sessionStorage.setItem(
         "currentInterview",
         JSON.stringify(interview)
@@ -162,17 +107,15 @@ export default function InterviewSetupPage() {
         String(interviewId)
       );
 
-      navigate(
-        "/interview/device-check"
-      );
-    } catch (err) {
+      navigate("/interview/device-check");
+    } catch (requestError) {
       console.error(
         "Create interview error:",
-        err
+        requestError
       );
 
       setError(
-        err?.message ||
+        requestError?.message ||
           "Unable to create the interview."
       );
     } finally {
@@ -182,14 +125,11 @@ export default function InterviewSetupPage() {
 
   return (
     <main className="mobile-page interview-setup-page">
-      {/* Header */}
       <header className="setup-header">
         <button
           type="button"
           className="back-btn"
-          onClick={() =>
-            navigate("/dashboard")
-          }
+          onClick={() => navigate("/dashboard")}
         >
           ← Back
         </button>
@@ -204,8 +144,8 @@ export default function InterviewSetupPage() {
           </h1>
 
           <p>
-            Choose how you want your interview
-            to feel. We'll take care of the rest.
+            Choose a category. All active questions
+            from that category will be asked.
           </p>
         </div>
       </header>
@@ -214,7 +154,6 @@ export default function InterviewSetupPage() {
         className="setup-form"
         onSubmit={handleStart}
       >
-        {/* Interview Type */}
         <section className="setup-section">
           <div className="section-heading">
             <div>
@@ -223,12 +162,12 @@ export default function InterviewSetupPage() {
               </span>
 
               <h2>
-                Interview type
+                Interview category
               </h2>
 
               <p>
-                What would you like to
-                practice?
+                Select the type of interview you want
+                to practice.
               </p>
             </div>
           </div>
@@ -237,15 +176,12 @@ export default function InterviewSetupPage() {
             <button
               type="button"
               className={
-                interviewType ===
-                "technical"
+                interviewType === "technical"
                   ? "setup-option active"
                   : "setup-option"
               }
               onClick={() =>
-                setInterviewType(
-                  "technical"
-                )
+                setInterviewType("technical")
               }
             >
               <span className="setup-option-icon">
@@ -258,14 +194,13 @@ export default function InterviewSetupPage() {
                 </strong>
 
                 <small>
-                  Coding, systems & technical
-                  concepts
+                  Coding, systems, APIs, and
+                  technical concepts
                 </small>
               </span>
 
               <span className="setup-option-check">
-                {interviewType ===
-                  "technical"
+                {interviewType === "technical"
                   ? "✓"
                   : ""}
               </span>
@@ -274,15 +209,12 @@ export default function InterviewSetupPage() {
             <button
               type="button"
               className={
-                interviewType ===
-                "behavioral"
+                interviewType === "non-technical"
                   ? "setup-option active"
                   : "setup-option"
               }
               onClick={() =>
-                setInterviewType(
-                  "behavioral"
-                )
+                setInterviewType("non-technical")
               }
             >
               <span className="setup-option-icon">
@@ -291,55 +223,17 @@ export default function InterviewSetupPage() {
 
               <span className="setup-option-content">
                 <strong>
-                  Behavioral
+                  Non-Technical
                 </strong>
 
                 <small>
-                  Communication & workplace
-                  situations
+                  Introduction, communication,
+                  teamwork, and workplace situations
                 </small>
               </span>
 
               <span className="setup-option-check">
-                {interviewType ===
-                  "behavioral"
-                  ? "✓"
-                  : ""}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className={
-                interviewType ===
-                "mixed"
-                  ? "setup-option active"
-                  : "setup-option"
-              }
-              onClick={() =>
-                setInterviewType(
-                  "mixed"
-                )
-              }
-            >
-              <span className="setup-option-icon">
-                ◈
-              </span>
-
-              <span className="setup-option-content">
-                <strong>
-                  Mixed
-                </strong>
-
-                <small>
-                  Technical + behavioral
-                  questions
-                </small>
-              </span>
-
-              <span className="setup-option-check">
-                {interviewType ===
-                  "mixed"
+                {interviewType === "non-technical"
                   ? "✓"
                   : ""}
               </span>
@@ -347,257 +241,6 @@ export default function InterviewSetupPage() {
           </div>
         </section>
 
-        {/* Role */}
-        <section className="setup-section">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">
-                STEP 02
-              </span>
-
-              <h2>
-                Target role
-              </h2>
-
-              <p>
-                What role are you preparing
-                for?
-              </p>
-            </div>
-          </div>
-
-          <div className="setup-field">
-            <label htmlFor="role">
-              Role
-            </label>
-
-            <input
-              id="role"
-              type="text"
-              value={role}
-              onChange={(event) =>
-                setRole(
-                  event.target.value
-                )
-              }
-              placeholder="e.g. Backend Developer"
-              autoComplete="off"
-            />
-
-            <span className="field-hint">
-              Use the role you're actually
-              targeting.
-            </span>
-          </div>
-        </section>
-
-        {/* Difficulty */}
-        <section className="setup-section">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">
-                STEP 03
-              </span>
-
-              <h2>
-                Difficulty
-              </h2>
-
-              <p>
-                Choose the level that matches
-                your current preparation.
-              </p>
-            </div>
-          </div>
-
-          <div className="difficulty-grid">
-            <button
-              type="button"
-              className={
-                difficulty ===
-                "beginner"
-                  ? "difficulty-option active"
-                  : "difficulty-option"
-              }
-              onClick={() =>
-                setDifficulty(
-                  "beginner"
-                )
-              }
-            >
-              <strong>
-                Beginner
-              </strong>
-
-              <small>
-                Fundamentals & simple
-                questions
-              </small>
-
-              <span>
-                {difficulty ===
-                  "beginner"
-                  ? "✓"
-                  : ""}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className={
-                difficulty ===
-                "intermediate"
-                  ? "difficulty-option active"
-                  : "difficulty-option"
-              }
-              onClick={() =>
-                setDifficulty(
-                  "intermediate"
-                )
-              }
-            >
-              <strong>
-                Intermediate
-              </strong>
-
-              <small>
-                Practical interview-level
-                questions
-              </small>
-
-              <span>
-                {difficulty ===
-                  "intermediate"
-                  ? "✓"
-                  : ""}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className={
-                difficulty ===
-                "advanced"
-                  ? "difficulty-option active"
-                  : "difficulty-option"
-              }
-              onClick={() =>
-                setDifficulty(
-                  "advanced"
-                )
-              }
-            >
-              <strong>
-                Advanced
-              </strong>
-
-              <small>
-                Deep technical & challenging
-                questions
-              </small>
-
-              <span>
-                {difficulty ===
-                  "advanced"
-                  ? "✓"
-                  : ""}
-              </span>
-            </button>
-          </div>
-        </section>
-
-        {/* Question Count */}
-        <section className="setup-section">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">
-                STEP 04
-              </span>
-
-              <h2>
-                Number of questions
-              </h2>
-
-              <p>
-                Choose how long you want the
-                interview to be.
-              </p>
-            </div>
-          </div>
-
-          <div className="question-count-control">
-            <button
-              type="button"
-              onClick={() =>
-                setQuestionCount(
-                  Math.max(
-                    1,
-                    Number(
-                      questionCount
-                    ) - 1
-                  )
-                )
-              }
-              disabled={
-                Number(
-                  questionCount
-                ) <= 1
-              }
-            >
-              −
-            </button>
-
-            <div>
-              <strong>
-                {questionCount}
-              </strong>
-
-              <span>
-                questions
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                setQuestionCount(
-                  Math.min(
-                    100,
-                    Number(
-                      questionCount
-                    ) + 1
-                  )
-                )
-              }
-              disabled={
-                Number(
-                  questionCount
-                ) >= 100
-              }
-            >
-              +
-            </button>
-          </div>
-
-          <div className="question-count-input">
-            <label htmlFor="questionCount">
-              Or enter a number
-            </label>
-
-            <input
-              id="questionCount"
-              type="number"
-              min="1"
-              max="100"
-              value={questionCount}
-              onChange={
-                handleQuestionCountChange
-              }
-            />
-          </div>
-        </section>
-
-        {/* Summary */}
         <section className="setup-summary">
           <div className="eyebrow">
             INTERVIEW SUMMARY
@@ -605,37 +248,11 @@ export default function InterviewSetupPage() {
 
           <div className="setup-summary-row">
             <span>
-              Type
+              Category
             </span>
 
             <strong>
-              {formatLabel(
-                interviewType
-              )}
-            </strong>
-          </div>
-
-          <div className="setup-summary-row">
-            <span>
-              Role
-            </span>
-
-            <strong>
-              {role
-                ? formatLabel(role)
-                : "Not selected"}
-            </strong>
-          </div>
-
-          <div className="setup-summary-row">
-            <span>
-              Difficulty
-            </span>
-
-            <strong>
-              {formatLabel(
-                difficulty
-              )}
+              {formatLabel(interviewType)}
             </strong>
           </div>
 
@@ -645,12 +262,11 @@ export default function InterviewSetupPage() {
             </span>
 
             <strong>
-              {questionCount}
+              All active questions
             </strong>
           </div>
         </section>
 
-        {/* Error */}
         {error && (
           <div className="form-error">
             <span>!</span>
@@ -661,15 +277,11 @@ export default function InterviewSetupPage() {
           </div>
         )}
 
-        {/* Start */}
         <section className="setup-actions">
           <button
             type="submit"
             className="primary-btn"
-            disabled={
-              loading ||
-              !role.trim()
-            }
+            disabled={loading}
           >
             {loading
               ? "Creating Interview..."
@@ -679,21 +291,17 @@ export default function InterviewSetupPage() {
           </button>
 
           <p>
-            You'll check your camera and
-            microphone before the interview
-            begins.
+            You will check your camera and microphone
+            before the interview begins.
           </p>
         </section>
       </form>
 
-      {/* Question Bank */}
       <button
         type="button"
         className="setup-admin-link"
         onClick={() =>
-          navigate(
-            "/admin/questions"
-          )
+          navigate("/admin/questions")
         }
       >
         <span>
@@ -705,7 +313,6 @@ export default function InterviewSetupPage() {
         </span>
       </button>
 
-      {/* Bottom Navigation */}
       <nav className="bottom-nav">
         <button
           type="button"
@@ -724,9 +331,7 @@ export default function InterviewSetupPage() {
           type="button"
           className="bottom-nav-item"
           onClick={() =>
-            navigate(
-              "/interview/history"
-            )
+            navigate("/interview/history")
           }
         >
           <span>◷</span>

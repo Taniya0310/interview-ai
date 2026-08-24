@@ -157,10 +157,15 @@ async function evaluateAudioAnswer({
   mimeType = "audio/wav",
   question,
   expectedTopics = [],
+  referenceAnswer = "",
+  answerKeyPoints = [],
 }) {
   if (!geminiApiKey) {
     return {
       transcript: "",
+      passed: false,
+      score: 0,
+      missingPoints: [],
       needsFollowUp: false,
       followUpQuestion: null,
       questionFeedback: "Gemini is not configured",
@@ -174,31 +179,50 @@ Question:
 ${question}
 
 Expected topics:
-${JSON.stringify(expectedTopics)}
+${JSON.stringify(expectedTopics || [])}
+
+Reference answer:
+${referenceAnswer || "[No reference answer provided]"}
+
+Required answer points:
+${JSON.stringify(answerKeyPoints || [])}
+
+Instructions:
+- First transcribe the complete spoken answer.
+- Compare the candidate's meaning with the reference answer.
+- Accept different wording when the meaning is approximately correct.
+- Do not require an exact match with the reference answer.
+- Mark passed as true when the answer is substantially correct.
+- Mark passed as false when important concepts are missing, incorrect, or unrelated.
+- List only the important missing concepts in missingPoints.
+- Ask a follow-up question only about the missing points.
+- If the answer is sufficient, needsFollowUp must be false and followUpQuestion must be null.
+- score must be a number from 0 to 100.
 
 Return ONLY valid JSON:
 {
   "transcript": "complete transcript of the candidate answer",
-  "needsFollowUp": true,
-  "followUpQuestion": "string or null",
+  "passed": true,
+  "score": 0,
+  "missingPoints": [],
+  "needsFollowUp": false,
+  "followUpQuestion": null,
   "questionFeedback": "short feedback"
 }
-
-Rules:
-- Transcribe the complete spoken answer.
-- needsFollowUp must be true or false.
-- Ask a follow-up if the answer is incomplete, unclear, or incorrect.
-- If the answer is sufficient, use false and null.
 `;
 
   const result = await sendAudioToGemini({
     filePath,
     mimeType,
     prompt,
+    timeout: 60000,
   });
 
   logger.info("Combined audio evaluation completed", {
     transcript: result.transcript || "[Transcript unavailable]",
+    passed: result.passed,
+    score: result.score,
+    missingPoints: result.missingPoints,
     needsFollowUp: result.needsFollowUp,
     followUpQuestion: result.followUpQuestion,
     questionFeedback: result.questionFeedback,
@@ -206,6 +230,11 @@ Rules:
 
   return {
     transcript: result.transcript || "",
+    passed: Boolean(result.passed),
+    score: Number(result.score) || 0,
+    missingPoints: Array.isArray(result.missingPoints)
+      ? result.missingPoints
+      : [],
     needsFollowUp: Boolean(result.needsFollowUp),
     followUpQuestion: result.followUpQuestion || null,
     questionFeedback: result.questionFeedback || null,

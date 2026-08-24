@@ -59,6 +59,8 @@ async function evaluateVideoAudio({
   videoPath,
   question,
   expectedTopics = [],
+  referenceAnswer = "",
+  answerKeyPoints = [],
 }) {
   if (!fs.existsSync(videoPath)) {
     throw new Error(`Video file not found: ${videoPath}`);
@@ -82,6 +84,9 @@ async function evaluateVideoAudio({
       "Audio extracted; sending one combined request to Gemini",
       {
         audioPath,
+        question,
+        referenceAnswerProvided: Boolean(referenceAnswer),
+        answerKeyPointsCount: answerKeyPoints.length,
       }
     );
 
@@ -90,10 +95,15 @@ async function evaluateVideoAudio({
       mimeType: "audio/wav",
       question,
       expectedTopics,
+      referenceAnswer,
+      answerKeyPoints,
     });
 
-    logger.info("Audio transcript and evaluation completed", {
+    logger.info("Audio transcription and evaluation completed", {
       transcript: result.transcript || "[Transcript unavailable]",
+      passed: result.passed,
+      score: result.score,
+      missingPoints: result.missingPoints,
       needsFollowUp: result.needsFollowUp,
       followUpQuestion: result.followUpQuestion,
       questionFeedback: result.questionFeedback,
