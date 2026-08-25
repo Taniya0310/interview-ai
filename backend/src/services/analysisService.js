@@ -333,6 +333,12 @@ async function report(interviewId) {
     weakAreas: analyses.flatMap((item) => item.weaknesses || item.weakAreas || []),
     recommendations: analyses.flatMap((item) => item.recommendations || []),
     feedback: analyses.map((item) => item.feedback).filter(Boolean).join(" "),
+    facialMetrics: analyses.length
+      ? Object.fromEntries(Object.keys(analyses[0].facialMetrics || {}).map((key) => [
+          key,
+          Math.round(analyses.reduce((sum, item) => sum + Number(item.facialMetrics?.[key] || 0), 0) / analyses.length),
+        ]))
+      : {},
     speechMetrics: analyses.length
       ? Object.fromEntries(Object.keys(analyses[0].speechMetrics || {}).map((key) => [
           key,
