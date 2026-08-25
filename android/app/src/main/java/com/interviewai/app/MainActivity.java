@@ -9,7 +9,7 @@ import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -22,7 +22,25 @@ public class MainActivity extends BridgeActivity implements TextToSpeech.OnInitL
     private PermissionRequest pendingPermissionRequest;
     private TextToSpeech textToSpeech;
     private boolean ttsReady;
+private long lastBackPressedTime = 0;
 
+@Override
+public void onBackPressed() {
+    long currentTime = System.currentTimeMillis();
+
+    if (currentTime - lastBackPressedTime < 2000) {
+        finishAndRemoveTask();
+        return;
+    }
+
+    lastBackPressedTime = currentTime;
+
+    Toast.makeText(
+        this,
+        "Press back again to exit",
+        Toast.LENGTH_SHORT
+    ).show();
+}
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
