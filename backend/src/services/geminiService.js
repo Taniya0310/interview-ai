@@ -487,6 +487,7 @@ async function analyze({
       weaknesses: [],
       recommendations: [],
       speechMetrics: {},
+      facialMetrics: { eyeContact: 0, facialExpression: 0, attentiveness: 0 },
       feedback: 'Gemini is not configured',
       questionFeedback: null,
     };
@@ -535,6 +536,11 @@ Return ONLY valid JSON:
     "fillerWords": 0,
     "confidence": 0
   },
+  "facialMetrics": {
+    "eyeContact": 0,
+    "facialExpression": 0,
+    "attentiveness": 0
+  },
   "feedback": "overall feedback",
   "questionFeedback": "feedback for this predefined question"
 }
@@ -558,6 +564,7 @@ All numeric scores must be between 0 and 100.
     speakingBehavior: result.speakingBehavior,
     presentation: result.presentation,
     speechMetrics: result.speechMetrics,
+    facialMetrics: result.facialMetrics,
     strengths: result.strengths,
     weaknesses: result.weaknesses,
     recommendations: result.recommendations,
