@@ -329,6 +329,16 @@ async function report(interviewId) {
     createdAt: result.rows[0].created_at,
     completedAt: result.rows[0].completed_at,
     scores: scoring.average(analyses),
+    strengths: analyses.flatMap((item) => item.strengths || []),
+    weakAreas: analyses.flatMap((item) => item.weaknesses || item.weakAreas || []),
+    recommendations: analyses.flatMap((item) => item.recommendations || []),
+    feedback: analyses.map((item) => item.feedback).filter(Boolean).join(" "),
+    speechMetrics: analyses.length
+      ? Object.fromEntries(Object.keys(analyses[0].speechMetrics || {}).map((key) => [
+          key,
+          Math.round(analyses.reduce((sum, item) => sum + Number(item.speechMetrics?.[key] || 0), 0) / analyses.length),
+        ]))
+      : {},
     answers: result.rows.map((row) => ({
       ...row,
       result:
