@@ -32,9 +32,7 @@ export default function PageLoader() {
           autoplay
           className="page-loader-animation"
         />
-      ) : (
-        <div className="page-loader-spinner" />
-      )}
+      ) : null}
     </div>
   );
 }
