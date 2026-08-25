@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  BarChart3,
+  BriefcaseBusiness,
+  Clock3,
+  UserRoundCheck,
+  Home,
+  Settings,
+  Sparkles,
+  Star,
+  Sun,
+} from "lucide-react";
 
 const API =
   import.meta.env.VITE_API_URL ||
@@ -188,7 +200,7 @@ export default function DashboardPage() {
           onClick={openSettings}
           aria-label="Open settings"
         >
-          <span>AM</span>
+          <UserRoundCheck size={23} strokeWidth={1.8} />
         </button>
       </header>
 
@@ -230,6 +242,7 @@ export default function DashboardPage() {
       {/* Stats */}
       <section className="dashboard-stats">
         <div className="stat-card">
+          <div className="stat-icon stat-icon-purple"><BriefcaseBusiness size={22} /></div>
           <span>
             Interviews
           </span>
@@ -244,6 +257,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="stat-card">
+          <div className="stat-icon stat-icon-orange"><Star size={22} /></div>
           <span>
             Avg. Score
           </span>
@@ -255,6 +269,13 @@ export default function DashboardPage() {
           <small>
             out of 100
           </small>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-green"><BarChart3 size={22} /></div>
+          <span>Day Streak</span>
+          <strong>5</strong>
+          <small>Keep it up! 🔥</small>
         </div>
       </section>
 

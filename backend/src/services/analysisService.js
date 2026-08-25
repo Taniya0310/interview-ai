@@ -62,7 +62,7 @@ async function processFastAnswer(answerId) {
 
     const needsFollowUp =
       Boolean(decision.needsFollowUp) &&
-      answer.follow_up_count < 5;
+      answer.follow_up_count < 2;
 
     const liveResult = {
       transcript,
