@@ -6,6 +6,9 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+import GifSplashScreen from "./components/GifSplashScreen";
 
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -82,39 +85,82 @@ function AdminEditRoute() {
 }
 
 function App() {
+  const [showSplash, setShowSplash] =
+    useState(true);
+
+  useEffect(() => {
+    const splashDuration = 3000;
+
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, splashDuration);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return <GifSplashScreen />;
+  }
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route
+          path="/"
+          element={
+            localStorage.getItem(
+              "hasSeenLanding"
+            ) === "true" ? (
+              <Navigate
+                to="/dashboard"
+                replace
+              />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={<DashboardPage />}
+        />
+
         <Route
           path="/interview/setup"
           element={<InterviewSetupPage />}
         />
+
         <Route
           path="/interview/device-check"
           element={<DeviceCheckPage />}
         />
+
         <Route
           path="/interview/live"
           element={<LiveInterviewPage />}
         />
+
         <Route
           path="/interview/processing"
           element={<ProcessingPage />}
         />
+
         <Route
           path="/interview/results"
           element={<ResultsPage />}
         />
+
         <Route
           path="/interview/answer/:id"
           element={<AnswerDetailPage />}
         />
+
         <Route
           path="/interview/history"
           element={<InterviewHistoryPage />}
         />
+
         <Route
           path="/settings"
           element={<SettingsPage />}
@@ -142,7 +188,9 @@ function App() {
 
         <Route
           path="*"
-          element={<Navigate to="/" replace />}
+          element={
+            <Navigate to="/" replace />
+          }
         />
       </Routes>
     </BrowserRouter>

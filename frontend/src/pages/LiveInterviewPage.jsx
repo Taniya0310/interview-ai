@@ -108,6 +108,11 @@ export default function LiveInterviewPage() {
   // LOAD INTERVIEW
   // ============================================================
 
+  const TTS_RATE = 0.90;
+const TTS_PITCH = 1.0;
+const TTS_VOLUME = 1.0;
+const TTS_START_DELAY = 400;
+const TTS_END_DELAY = 600;
   useEffect(() => {
     mountedRef.current = true;
 
@@ -239,15 +244,20 @@ export default function LiveInterviewPage() {
         : window.speechSynthesis.getVoices();
 
     // Prefer Indian English male voice.
-    const indianMale =
-      voices.find(
-        (voice) =>
-          voice.lang?.toLowerCase() ===
-            "en-in" &&
-          /ravi|male|man/i.test(
-            voice.name
-          )
-      );
+ const indianVoices = voices.filter(
+  (voice) =>
+    voice.lang?.toLowerCase() === "en-in"
+);
+
+const indianMale =
+  indianVoices.find((voice) =>
+    /ravi/i.test(voice.name)
+  ) ||
+  indianVoices.find((voice) =>
+    /male|man/i.test(voice.name)
+  ) ||
+  indianVoices[0] ||
+  null;
 
     if (indianMale) {
       return indianMale;
@@ -408,9 +418,9 @@ Please take your time. I am listening.
       utterance.lang = "en-IN";
     }
 
-    utterance.rate = 0.9;
-    utterance.pitch = 0.8;
-    utterance.volume = 1;
+    utterance.rate = TTS_RATE;
+utterance.pitch = TTS_PITCH;
+utterance.volume = TTS_VOLUME;
 
     speechRef.current =
       utterance;
@@ -749,7 +759,7 @@ Please take your time. I am listening.
               )
             );
           }
-        }, 500);
+      }, TTS_START_DELAY);
 
         return;
       }
@@ -1335,7 +1345,7 @@ Please take your time. I am listening.
               )
             );
           }
-        }, 500);
+       }, TTS_END_DELAY);
       } catch (mediaError) {
         stream
           ?.getTracks()

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import PageLoader from "../components/PageLoader";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
@@ -578,19 +578,7 @@ export default function InterviewHistoryPage() {
         )}
 
       {/* Loading */}
-      {loading && (
-        <section className="history-loading">
-          <div className="loading-spinner" />
-
-          <h3>
-            Loading your history...
-          </h3>
-
-          <p>
-            Please wait a moment.
-          </p>
-        </section>
-      )}
+     {loading && <PageLoader />}
 
       {/* Error */}
       {!loading && error && (

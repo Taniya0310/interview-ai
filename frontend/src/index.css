@@ -5606,3 +5606,27 @@ button {
 .landing-reference .landing-content{flex:0 0 auto!important;padding-bottom:0!important}.landing-reference .landing-features{margin-top:1.5cm!important}
 .dashboard-hero{min-height:0!important}.dashboard-hero-content{padding-bottom:0!important}.dashboard-hero .primary-btn{margin-bottom:0!important}.dashboard-stats{margin-top:12px!important}
 @media(max-width:620px){.dashboard-hero{min-height:0!important;padding:23px 18px 20px!important}.dashboard-hero .primary-btn{margin-top:14px!important}}
+.page-loader {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.page-loader-animation {
+  width: 160px;
+  height: 160px;
+}
+
+.processing-visual .page-loader {
+  min-height: 220px;
+  background: transparent;
+}
+
+.processing-visual .page-loader-animation {
+  width: 180px;
+  height: 180px;
+}
+.page-loader-spinner{width:34px;height:34px;border:3px solid rgba(255,100,27,.22);border-top-color:#ff641b;border-radius:50%;animation:page-loader-spin .75s linear infinite}@keyframes page-loader-spin{to{transform:rotate(360deg)}}
