@@ -4,8 +4,9 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   function handleGetStarted() {
-    navigate("/interview/setup");
-  }
+  localStorage.setItem("hasSeenLanding", "true");
+  navigate("/dashboard");
+}
 
   return (
     <main className="mobile-page landing-page">

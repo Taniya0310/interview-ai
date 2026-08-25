@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import PageLoader from "../components/PageLoader";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
@@ -262,19 +262,10 @@ export default function ProcessingPage() {
       </header>
 
       {/* Processing Animation */}
-      <section className="processing-visual">
-        <div className="processing-orbit">
-          <div className="processing-core">
-            <span>✦</span>
-          </div>
-
-          <div className="processing-dot dot-one" />
-          <div className="processing-dot dot-two" />
-          <div className="processing-dot dot-three" />
-        </div>
-
-        <div className="processing-pulse" />
-      </section>
+      {/* Processing Animation */}
+<section className="processing-visual">
+  <PageLoader />
+</section>
 
       {/* Status */}
       <section className="processing-status">

@@ -5361,3 +5361,27 @@ button {
     width: 100%;
   }
 }
+
+.page-loader {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.page-loader-animation {
+  width: 160px;
+  height: 160px;
+}
+
+.processing-visual .page-loader {
+  min-height: 220px;
+  background: transparent;
+}
+
+.processing-visual .page-loader-animation {
+  width: 180px;
+  height: 180px;
+}

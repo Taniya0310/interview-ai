@@ -25,3 +25,11 @@ VALUES (
   '["Self-introduction", "Background", "Experience or education", "Relevant skills", "Career goals"]'::jsonb,
   true
 );
+
+ALTER TABLE questions
+ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'general',
+ADD COLUMN IF NOT EXISTS difficulty TEXT DEFAULT 'beginner';
+
+ALTER TABLE interviews
+ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'general',
+ADD COLUMN IF NOT EXISTS difficulty TEXT DEFAULT 'beginner';
