@@ -35,7 +35,11 @@ function getScore(answer) {
     value === undefined ||
     value === ""
   ) {
-    return null;
+    const metrics = answer?.result ?? answer?.evaluation ?? answer?.analysis ?? {};
+    const values = ["technicalCorrectness", "relevance", "communication", "structure", "speakingBehavior", "presentation"]
+      .map((key) => Number(metrics[key]))
+      .filter((item) => Number.isFinite(item));
+    return values.length ? Math.round(values.reduce((sum, item) => sum + item, 0) / values.length) : null;
   }
 
   const score = Number(value);
@@ -118,6 +122,20 @@ function getImprovements(answer) {
   }
 
   return [];
+}
+
+function getRecommendations(answer) {
+  const value = answer?.recommendations ?? answer?.result?.recommendations ?? [];
+  return Array.isArray(value) ? value : value ? [value] : [];
+}
+
+function getSpeechMetrics(answer) {
+  return answer?.speechMetrics ?? answer?.result?.speechMetrics ?? {};
+}
+
+function getEvaluationScores(answer) {
+  const source = answer?.result ?? answer?.evaluation ?? answer?.analysis ?? answer ?? {};
+  return Object.fromEntries(["technicalCorrectness", "relevance", "communication", "structure", "speakingBehavior", "presentation"].filter((key) => source[key] !== undefined).map((key) => [key, source[key]]));
 }
 
 function getVideoUrl(answer) {
@@ -330,6 +348,9 @@ export default function AnswerDetailPage() {
   const feedback = getFeedback(answer);
   const strengths = getStrengths(answer);
   const improvements = getImprovements(answer);
+  const recommendations = getRecommendations(answer);
+  const speechMetrics = getSpeechMetrics(answer);
+  const evaluationScores = getEvaluationScores(answer);
   const videoUrl = getVideoUrl(answer);
 
   return (
@@ -487,6 +508,27 @@ export default function AnswerDetailPage() {
           </p>
         </div>
       </section>
+
+      {Object.keys(evaluationScores).length > 0 && (
+        <section className="answer-detail-section answer-evaluation-section">
+          <div className="section-heading"><div><span className="eyebrow">EVALUATION</span><h2>Performance scores</h2></div></div>
+          <div className="answer-evaluation-grid">{Object.entries(evaluationScores).map(([name, value]) => <div className="answer-evaluation-item" key={name}><span>{name.replace(/([A-Z])/g, " $1")}</span><strong>{value}/100</strong><div><i style={{ width: `${Math.max(0, Math.min(100, Number(value) || 0))}%` }} /></div></div>)}</div>
+        </section>
+      )}
+
+      {Object.keys(speechMetrics).length > 0 && (
+        <section className="answer-detail-section">
+          <div className="section-heading"><div><span className="eyebrow">SPEECH METRICS</span><h2>Speaking performance</h2></div></div>
+          <div className="answer-metrics-grid">{Object.entries(speechMetrics).map(([name, value]) => <div key={name}><span>{name.replace(/([A-Z])/g, " $1")}</span><strong>{value}</strong></div>)}</div>
+        </section>
+      )}
+
+      {recommendations.length > 0 && (
+        <section className="answer-detail-section">
+          <div className="section-heading"><div><span className="eyebrow">RECOMMENDATIONS</span><h2>How to improve</h2></div></div>
+          <div className="answer-recommendations">{recommendations.map((item, index) => <p key={index}><b>{index + 1}</b>{typeof item === "string" ? item : item?.text || item?.description || item?.title || "Practice this area."}</p>)}</div>
+        </section>
+      )}
 
       {/* Strengths */}
       {strengths.length > 0 && (

@@ -1,9 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  BarChart3,
   History,
   Home,
-  Plus,
+  Mic,
   Settings,
 } from "lucide-react";
 
@@ -21,7 +20,7 @@ const navItems = [
   {
     label: "Results",
     path: "/interview/results",
-    icon: BarChart3,
+    icon: Mic,
   },
   {
     label: "Settings",
@@ -118,7 +117,7 @@ export default function BottomNav() {
           aria-label="Start interview"
         >
           <span className="bottom-nav-create-icon">
-            <Plus
+            <Mic
               size={24}
               strokeWidth={2.1}
             />
@@ -128,23 +127,23 @@ export default function BottomNav() {
         <button
           type="button"
           className={`bottom-nav-item ${
-            isActive("/interview/results")
+            location.pathname.startsWith("/interview/setup")
               ? "active"
               : ""
           }`}
           onClick={() =>
-            navigate("/interview/results")
+            navigate("/interview/setup")
           }
         >
           <span className="bottom-nav-icon">
-            <BarChart3
+            <Mic
               size={19}
               strokeWidth={1.9}
             />
           </span>
 
           <span className="bottom-nav-label">
-            Results
+            Interview
           </span>
         </button>
 

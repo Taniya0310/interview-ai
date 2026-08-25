@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -231,7 +232,7 @@ export default function SettingsPage() {
                 handleClearSession
               }
             >
-              Clear
+              <X size={18} strokeWidth={2.5} aria-label="Clear session" />
             </button>
           </div>
         </div>

@@ -26,6 +26,45 @@ async function api(path) {
   return response.json();
 }
 
+function getRadarPoints(scores, radius = 72, center = 90) {
+  const values = Object.values(scores || {}).slice(0, 6).map((value) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : 0;
+  });
+  const count = Math.max(values.length, 3);
+  return values.map((value, index) => {
+    const angle = -Math.PI / 2 + (index * Math.PI * 2) / count;
+    const distance = (value / 100) * radius;
+    return `${center + Math.cos(angle) * distance},${center + Math.sin(angle) * distance}`;
+  }).join(" ");
+}
+
+function RadarChart({ scores }) {
+  const values = Object.values(scores || {}).slice(0, 6);
+  const count = Math.max(values.length, 3);
+  const outline = Array.from({ length: count }, (_, index) => {
+    const angle = -Math.PI / 2 + (index * Math.PI * 2) / count;
+    return `${90 + Math.cos(angle) * 72},${90 + Math.sin(angle) * 72}`;
+  }).join(" ");
+
+  return <svg className="results-radar-chart" viewBox="0 0 180 180" role="img" aria-label="Performance radar chart">
+    <polygon points={outline} className="radar-grid" />
+    <polygon points={getRadarPoints(scores, 72, 90)} className="radar-value" />
+    {Array.from({ length: count }, (_, index) => {
+      const angle = -Math.PI / 2 + (index * Math.PI * 2) / count;
+      const label = String(values[index] === undefined ? "" : Object.keys(scores || {})[index] || "")
+        .replace(/[-_]/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+      const labelX = 90 + Math.cos(angle) * 86;
+      const labelY = 90 + Math.sin(angle) * 86;
+      return [
+        <line key={`axis-${index}`} x1="90" y1="90" x2={90 + Math.cos(angle) * 72} y2={90 + Math.sin(angle) * 72} className="radar-axis" />,
+        <text key={`label-${index}`} x={labelX} y={labelY} className="radar-label" textAnchor={labelX < 82 ? "end" : labelX > 98 ? "start" : "middle"}>{label}</text>,
+      ];
+    })}
+  </svg>;
+}
+
 function getAnswers(report) {
   if (Array.isArray(report?.answers)) {
     return report.answers;
@@ -144,6 +183,14 @@ function getSummary(report) {
     report?.feedback ??
     ""
   );
+}
+
+function getRecommendations(report) {
+  return Array.isArray(report?.recommendations) ? report.recommendations : [];
+}
+
+function getSpeechMetrics(report) {
+  return report?.speechMetrics && typeof report.speechMetrics === "object" ? report.speechMetrics : {};
 }
 
 function getAnswerScore(answer) {
@@ -362,6 +409,9 @@ export default function ResultsPage() {
     () => getSummary(report),
     [report]
   );
+
+  const recommendations = useMemo(() => getRecommendations(report), [report]);
+  const speechMetrics = useMemo(() => getSpeechMetrics(report), [report]);
 
   function handleDashboard() {
     navigate("/dashboard");
@@ -698,6 +748,20 @@ export default function ResultsPage() {
               )
             )}
           </div>
+        </section>
+      )}
+
+      {Object.keys(speechMetrics).length > 0 && (
+        <section className="results-section results-metrics-section">
+          <div className="section-heading"><div><span className="eyebrow">SPEECH METRICS</span><h2>Speaking performance</h2></div></div>
+          <div className="results-metrics-grid">{Object.entries(speechMetrics).map(([name, value]) => <div className="results-metric-card" key={name}><span>{name.replace(/([A-Z])/g, " $1")}</span><strong>{value}</strong></div>)}</div>
+        </section>
+      )}
+
+      {recommendations.length > 0 && (
+        <section className="results-section results-recommendations-section">
+          <div className="section-heading"><div><span className="eyebrow">RECOMMENDATIONS</span><h2>How to improve</h2></div></div>
+          <div className="results-recommendations">{recommendations.map((item, index) => <div key={index}><span>{index + 1}</span><p>{renderListItem(item)}</p></div>)}</div>
         </section>
       )}
 

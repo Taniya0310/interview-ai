@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import PageLoader from "../components/PageLoader";
 const API =
   import.meta.env.VITE_API_URL ||
@@ -671,7 +672,7 @@ export default function InterviewHistoryPage() {
                 setFilter("all");
               }}
             >
-              Clear Filters
+              <X size={19} strokeWidth={2.4} aria-hidden="true" />
             </button>
           </section>
         )}

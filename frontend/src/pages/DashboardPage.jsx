@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BottomNav from "../components/BottomNav";
 import {
   ArrowRight,
   BarChart3,
@@ -532,6 +533,7 @@ export default function DashboardPage() {
           <small>Settings</small>
         </button>
       </nav>
+      <BottomNav />
     </main>
   );
 }

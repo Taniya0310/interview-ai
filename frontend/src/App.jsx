@@ -5,10 +5,12 @@ import {
   Navigate,
   useNavigate,
   useParams,
+  useLocation,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import GifSplashScreen from "./components/GifSplashScreen";
+import BottomNav from "./components/BottomNav";
 
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -84,6 +86,22 @@ function AdminEditRoute() {
   );
 }
 
+function GlobalBottomNav() {
+  const location = useLocation();
+  const hidden = location.pathname === "/" || location.pathname.startsWith("/admin") || location.pathname === "/interview/live";
+  return hidden ? null : <BottomNav />;
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   const [showSplash, setShowSplash] =
     useState(true);
@@ -104,6 +122,8 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
+      <GlobalBottomNav />
       <Routes>
         <Route
           path="/"
