@@ -10,7 +10,7 @@
   --bg: #f7f7f6;
   --surface: #ffffff;
   --surface-soft: #f1f1ef;
-  --surface-blue: #fff4e8;
+  --surface-orange: #fff4e8;
 
   --black: #0b1220;
   --black-soft: #111827;
@@ -22,18 +22,29 @@
   --border: #e6e1db;
   --border-dark: #cfc6bc;
 
-  /* ---------- Blue ---------- */
-  --blue-950: #1b120b;
-  --blue-900: #2b1a0d;
-  --blue-800: #512b0d;
-  --blue-700: #a84b00;
-  --blue-600: #e56700;
-  --blue-500: #f27b22;
-  --blue-400: #ff9d55;
-  --blue-300: #ffc08e;
+  /* ---------- Orange ---------- */
+  --orange-950: #1b120b;
+  --orange-900: #2b1a0d;
+  --orange-800: #512b0d;
+  --orange-700: #a84b00;
+  --orange-600: #ff9b1c;
+  --orange-500: #ff9b1c;
+  --orange-400: #ff9b1c;
+  --orange-300: #ff9b1c;
+  --orange-100: #ff9b1c;
+  --orange-50: #ff9b1c;
 
-  --blue-100: #ffe8d2;
-  --blue-50: #fff5eb;
+  /* Legacy aliases used by older component rules; all map to the orange palette. */
+  --blue-950: var(--orange-950);
+  --blue-900: var(--orange-900);
+  --blue-800: var(--orange-800);
+  --blue-700: var(--orange-700);
+  --blue-600: var(--orange-600);
+  --blue-500: var(--orange-500);
+  --blue-400: var(--orange-400);
+  --blue-300: var(--orange-300);
+  --blue-100: var(--orange-100);
+  --blue-50: var(--orange-50);
 
   /* ---------- Green ---------- */
   --green-700: #16704a;
@@ -5671,3 +5682,123 @@ button {
 .settings-action{background:transparent!important;border:0!important;box-shadow:none!important;font-size:0!important;position:relative!important}.settings-action::before{content:"";display:block;width:9px;height:9px;border-top:2px solid #d9530b;border-right:2px solid #d9530b;transform:rotate(45deg);transition:transform .2s ease}.settings-action:hover::before{transform:translateX(3px) rotate(45deg)}
 .processing-visual{height:140px!important;margin:8px auto 10px!important}.processing-visual .page-loader,.processing-visual .page-loader-animation{min-height:130px!important;width:130px!important;height:130px!important}
 .processing-page .processing-visual{display:none!important;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+
+/* Orange accent standardization */
+.dashboard-hero h2 span,
+.landing-content .eyebrow,
+.landing-content h1 span,
+.feature-arrow,
+.landing-stats svg { color: #ff9b1c; }
+
+.dashboard-hero .primary-btn,
+.landing-btn,
+.app-bottom-nav .bottom-nav-create-icon,
+.nav-plus,
+.history-filter.active,
+.primary-btn,
+.admin-primary-button { background: #ff9b1c; }
+
+/* Page-specific orange and icon contrast fixes */
+.history-filter.active,
+.history-card::before,
+.history-card-arrow,
+.history-status,
+.history-bottom-cta .secondary-btn,
+.settings-bottom .secondary-btn { color: #ff9b1c !important; }
+
+.history-filter.active,
+.history-bottom-cta .secondary-btn,
+.settings-bottom .secondary-btn {
+  background: #ff9b1c !important;
+  color: #fff !important;
+}
+
+.settings-icon {
+  background: #fff4e8 !important;
+  color: #ff9b1c !important;
+}
+
+.settings-icon svg {
+  color: #ff9b1c !important;
+  stroke: #ff9b1c !important;
+}
+
+/* Recent interview and history card accents */
+.recent-interview-card::before,
+.recent-interview-card .recent-icon,
+.recent-interview-card .status-text,
+.recent-interview-card .recent-arrow,
+.history-card::before,
+.history-card-icon,
+.history-card-arrow,
+.history-status,
+.history-tag {
+  color: #ff9b1c !important;
+}
+
+.recent-interview-card::before,
+.history-card::before {
+  background: #ff9b1c !important;
+}
+
+.recent-interview-card .recent-icon,
+.history-card-icon,
+.history-tag,
+.history-status {
+  background: #fff4e8 !important;
+}
+
+.history-status.completed {
+  background: #e9f8e9 !important;
+  color: #168a2d !important;
+}
+
+.recent-interview-card .recent-icon {
+  background: transparent !important;
+}
+
+/* First page and compact bottom navigation */
+.landing-content .eyebrow,
+.landing-content h1 span,
+.landing-rule {
+  color: #ff9b1c !important;
+}
+
+.landing-btn,
+.landing-rule,
+.landing-mic,
+.feature-icon {
+  background: #ff9b1c !important;
+}
+
+.landing-btn,
+.landing-mic,
+.feature-icon {
+  color: #fff !important;
+}
+
+.bottom-nav,
+.app-bottom-nav {
+  padding: 6px !important;
+}
+
+.bottom-nav .bottom-nav-item,
+.app-bottom-nav .bottom-nav-item,
+.bottom-nav .bottom-nav-create,
+.app-bottom-nav .bottom-nav-create {
+  min-height: 56px !important;
+}
+
+.bottom-nav .nav-plus,
+.app-bottom-nav .bottom-nav-create-icon {
+  width: 58px !important;
+  height: 58px !important;
+  margin-top: -14px !important;
+  background: #ff9b1c !important;
+}
+
+.bottom-nav .bottom-nav-item.active,
+.app-bottom-nav .bottom-nav-item.active {
+  background: #ff9b1c !important;
+  color: #fff !important;
+}

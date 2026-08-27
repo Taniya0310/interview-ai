@@ -1,0 +1,33 @@
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and package-manager files generated locally
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime and local data
+uploads
+*.log
+coverage
+.nyc_output
+
+# Development and editor files
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Docker/build files
+Dockerfile*
+docker-compose*.yml
