@@ -5733,6 +5733,50 @@ button {
 .primary-btn,
 .admin-primary-button { background: #ff9b1c; }
 
+/* Question Bank theme alignment */
+.admin-eyebrow,
+.admin-action-link,
+.admin-edit-button,
+.admin-back-button:hover,
+.admin-stat-icon,
+.admin-action-icon,
+.admin-info-icon {
+  color: #ff9b1c !important;
+}
+
+.admin-stat-icon,
+.admin-action-icon,
+.admin-info-icon {
+  background: #fff4e8 !important;
+}
+
+.admin-primary-button {
+  background: #ff9b1c !important;
+  border-color: #ff9b1c !important;
+}
+
+.admin-back-button:hover {
+  border-color: #ff9b1c !important;
+  background: #fff4e8 !important;
+}
+
+.admin-stat-icon,
+.admin-action-icon,
+.admin-info-icon {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  font-size: 26px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
 /* Page-specific orange and icon contrast fixes */
 .history-filter.active,
 .history-card::before,
