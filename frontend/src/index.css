@@ -5683,6 +5683,41 @@ button {
 .processing-visual{height:140px!important;margin:8px auto 10px!important}.processing-visual .page-loader,.processing-visual .page-loader-animation{min-height:130px!important;width:130px!important;height:130px!important}
 .processing-page .processing-visual{display:none!important;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
 
+/* Interview complete performance accents */
+.score-breakdown-header strong,
+.score-breakdown-header::after,
+.score-breakdown-item::before,
+.score-progress span,
+.results-header .eyebrow,
+.results-score-content .eyebrow {
+  color: #ff9b1c !important;
+}
+
+.score-breakdown-item::before {
+  background: #fff4e8 !important;
+}
+
+.score-progress span {
+  background: #ff9b1c !important;
+}
+
+/* Results page bottom actions */
+.results-actions .primary-btn,
+.results-dashboard-btn {
+  background: #ff9b1c !important;
+  border-color: #ff9b1c !important;
+}
+
+.results-actions .secondary-btn {
+  border-color: #ff9b1c !important;
+  color: #ff9b1c !important;
+}
+
+.results-recommendations > div > span,
+.answer-recommendations b {
+  background: #ff9b1c !important;
+}
+
 /* Orange accent standardization */
 .dashboard-hero h2 span,
 .landing-content .eyebrow,
