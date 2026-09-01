@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { createTtsChunker } from "../services/ttsChunker";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
@@ -82,7 +82,10 @@ export default function LiveInterviewPage() {
   // Speech refs
   // -----------------------------
   const speechRef = useRef(null);
-  const voicesRef = useRef([]);
+const voicesRef = useRef([]);
+
+const ttsChunkerRef = useRef(null);
+const ttsChunkIdRef = useRef(0);
 
   // -----------------------------
   // Interview refs
@@ -335,141 +338,176 @@ Please take your time. I am listening.
   // SPEAK QUESTION
   // ============================================================
 
-  function speakQuestion(questionText) {
+ function speakQuestion(questionText) {
+  if (!mountedRef.current) {
+    return;
+  }
+
+  if (!questionText) {
+    startRecording();
+    return;
+  }
+
+  const nativeTts = window.AndroidTTS;
+
+  if (nativeTts?.speakChunk) {
+    try {
+      nativeTts.stop?.();
+      nativeTts.clearQueue?.();
+
+      ttsChunkerRef.current =
+        createTtsChunker();
+
+      ttsChunkIdRef.current = 0;
+
+      const chunks =
+        ttsChunkerRef.current.addText(
+          questionText
+        );
+
+      const finalChunk =
+        ttsChunkerRef.current.flush();
+
+      if (finalChunk) {
+        chunks.push(finalChunk);
+      }
+
+      setStatus(
+        "Here's your question."
+      );
+
+      chunks.forEach((chunk) => {
+        if (!chunk || !chunk.trim()) {
+          return;
+        }
+
+        ttsChunkIdRef.current += 1;
+
+        const chunkId =
+          String(ttsChunkIdRef.current);
+
+        const wordCount =
+          chunk.trim().split(/\s+/).length;
+
+        console.debug("[OfflineTTS]", {
+          event: "CHUNK_SENT",
+          chunkId,
+          wordCount,
+          text: chunk,
+        });
+
+        nativeTts.speakChunk(
+          chunk,
+          chunkId
+        );
+      });
+
+      const wordCount =
+        questionText.trim().split(/\s+/).length;
+
+      const estimatedSpeechTime =
+        Math.max(
+          1800,
+          wordCount * 520
+        );
+
+      setTimeout(() => {
+        if (mountedRef.current) {
+          setStatus(
+            "I'm listening. Take your time."
+          );
+
+          startRecording();
+        }
+      }, estimatedSpeechTime);
+
+      return;
+    } catch (nativeSpeechError) {
+      console.warn(
+        "Piper TTS failed:",
+        nativeSpeechError
+      );
+    }
+  }
+
+  if (!("speechSynthesis" in window)) {
+    setStatus(
+      "I am ready when you are."
+    );
+
+    startRecording();
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const voice =
+    getIndianMaleVoice();
+
+  const utterance =
+    new SpeechSynthesisUtterance(
+      questionText
+    );
+
+  if (voice) {
+    utterance.voice = voice;
+    utterance.lang =
+      voice.lang || "en-IN";
+  } else {
+    utterance.lang = "en-IN";
+  }
+
+  utterance.rate = TTS_RATE;
+  utterance.pitch = TTS_PITCH;
+  utterance.volume = TTS_VOLUME;
+
+  speechRef.current =
+    utterance;
+
+  setStatus(
+    "Here's your question."
+  );
+
+  utterance.onend = () => {
+    speechRef.current = null;
+
     if (!mountedRef.current) {
       return;
     }
 
-    if (!questionText) {
-      startRecording();
-      return;
-    }
+    setStatus(
+      "I'm listening. Take your time."
+    );
 
-    // ---------------------------------------
-    // Android native TTS
-    // ---------------------------------------
-
-    const nativeTts =
-      window.AndroidTTS;
-
-    if (nativeTts) {
-      try {
-        nativeTts.stop();
-
-        nativeTts.speak(
-          questionText
-        );
-
-        setStatus(
-          "Here's your question."
-        );
-
-        const wordCount =
-          questionText
-            .trim()
-            .split(/\s+/).length;
-
-        setTimeout(() => {
-          if (mountedRef.current) {
-            startRecording();
-          }
-        }, Math.max(1200, wordCount * 520));
-
-        return;
-      } catch (nativeSpeechError) {
-        console.warn(
-          "Native speech failed:",
-          nativeSpeechError
-        );
+    setTimeout(() => {
+      if (mountedRef.current) {
+        startRecording();
       }
-    }
+    }, 700);
+  };
 
-    // ---------------------------------------
-    // Browser TTS
-    // ---------------------------------------
+  utterance.onerror = () => {
+    speechRef.current = null;
 
-    if (
-      !("speechSynthesis" in window)
-    ) {
-      setStatus(
-        "I am ready when you are."
-      );
-
-      startRecording();
-
+    if (!mountedRef.current) {
       return;
     }
-
-    window.speechSynthesis.cancel();
-
-    const voice =
-      getIndianMaleVoice();
-
-    const utterance =
-      new SpeechSynthesisUtterance(
-        questionText
-      );
-
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang =
-        voice.lang || "en-IN";
-    } else {
-      utterance.lang = "en-IN";
-    }
-
-    utterance.rate = TTS_RATE;
-utterance.pitch = TTS_PITCH;
-utterance.volume = TTS_VOLUME;
-
-    speechRef.current =
-      utterance;
 
     setStatus(
-      "Here's your question."
+      "I am ready when you are."
     );
 
-    utterance.onend = () => {
-      speechRef.current = null;
-
-      if (!mountedRef.current) {
-        return;
+    setTimeout(() => {
+      if (mountedRef.current) {
+        startRecording();
       }
+    }, 700);
+  };
 
-      setStatus(
-        "I'm listening. Take your time."
-      );
-
-      setTimeout(() => {
-        if (mountedRef.current) {
-          startRecording();
-        }
-      }, 700);
-    };
-
-    utterance.onerror = () => {
-      speechRef.current = null;
-
-      if (!mountedRef.current) {
-        return;
-      }
-
-      setStatus(
-        "I am ready when you are."
-      );
-
-      setTimeout(() => {
-        if (mountedRef.current) {
-          startRecording();
-        }
-      }, 700);
-    };
-
-    window.speechSynthesis.speak(
-      utterance
-    );
-  }
-
+  window.speechSynthesis.speak(
+    utterance
+  );
+}
   // ============================================================
   // SILENCE MONITOR
   // ============================================================
@@ -1425,6 +1463,10 @@ Please take your time. I am listening.
       }
 
       window.AndroidTTS?.stop?.();
+window.AndroidTTS?.clearQueue?.();
+
+ttsChunkerRef.current?.reset?.();
+ttsChunkIdRef.current = 0;
 
       if (
         recorderRef.current &&
