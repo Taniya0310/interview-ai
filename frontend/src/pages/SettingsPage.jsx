@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { X, Share2 } from "lucide-react";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -11,7 +11,13 @@ export default function SettingsPage() {
 
     alert("Current interview session cleared.");
   }
-
+function handleShareApp() {
+  if (window.AndroidTTS?.shareApp) {
+    window.AndroidTTS.shareApp();
+  } else {
+    alert("App sharing is available in the Android app.");
+  }
+}
   return (
     <main className="mobile-page settings-page">
       {/* Header */}
@@ -197,7 +203,44 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+{/* Share App */}
+<section className="settings-section">
+  <div className="section-heading">
+    <div>
+      <span className="eyebrow">
+        SHARE
+      </span>
 
+      <h2>Share Interview AI</h2>
+    </div>
+  </div>
+
+  <div className="settings-card">
+    <div className="settings-item">
+      <div className="settings-icon">
+        <Share2 size={20} />
+      </div>
+
+      <div className="settings-content">
+        <h3>Share the app</h3>
+
+        <p>
+          Send the Interview AI APK to someone
+          through WhatsApp or another app.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        className="settings-action"
+        onClick={handleShareApp}
+        aria-label="Share app"
+      >
+        →
+      </button>
+    </div>
+  </div>
+</section>
       {/* Session */}
       <section className="settings-section">
         <div className="section-heading">

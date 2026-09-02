@@ -51,113 +51,125 @@ public final class OfflineTtsManager {
                 );
     }
 
-    public void initialize() {
-        initializationThread =
-                new Thread(() -> {
-                    try {
-                        Log.i(
-                                TAG,
-                                "TTS_INITIALIZATION_START"
-                        );
+    public void initialize(ModelDownloader.DownloadListener listener) {
+    initializationThread =
+            new Thread(
+                    () -> {
+                        try {
+                            Log.i(
+                                    TAG,
+                                    "TTS_INITIALIZATION_START"
+                            );
 
-                        File modelDirectory =
-                                modelDownloader
-                                        .downloadAndExtract();
+                            if (listener != null) {
+                                listener.onStarted();
+                            }
 
-                        String dataDirectory =
-                                new File(
-                                        modelDirectory,
-                                        "espeak-ng-data"
-                                ).getAbsolutePath();
+                            File modelDirectory =
+                                    modelDownloader.downloadAndExtract(
+                                            listener
+                                    );
 
-                        Log.i(
-                                TAG,
-                                "MODEL_PATH="
-                                        + new File(
-                                                modelDirectory,
-                                                "en_US-lessac-medium.onnx"
-                                        ).getAbsolutePath()
-                        );
+                            if (listener != null) {
+                                listener.onCompleted();
+                            }
 
-                        Log.i(
-                                TAG,
-                                "TOKENS_PATH="
-                                        + new File(
-                                                modelDirectory,
-                                                "tokens.txt"
-                                        ).getAbsolutePath()
-                        );
+                            String dataDirectory =
+                                    new File(
+                                            modelDirectory,
+                                            "espeak-ng-data"
+                                    ).getAbsolutePath();
 
-                        Log.i(
-                                TAG,
-                                "DATA_DIRECTORY="
-                                        + dataDirectory
-                        );
+                            Log.i(
+                                    TAG,
+                                    "MODEL_PATH="
+                                            + new File(
+                                                    modelDirectory,
+                                                    "en_US-ryan-medium.onnx"
+                                            ).getAbsolutePath()
+                            );
 
-                        OfflineTtsConfig config =
-                                TtsKt.getOfflineTtsConfig(
-                                        modelDirectory
-                                                .getAbsolutePath(),
-                                        "en_US-lessac-medium.onnx",
-                                        "",
-                                        "",
-                                        "",
-                                        "tokens.txt",
-                                        dataDirectory,
-                                        "",
-                                        "",
-                                        "",
-                                        1,
-                                        false,
-                                        false,
-                                        "",
-                                        "",
-                                        "",
-                                        "",
-                                        "",
-                                        "",
-                                        ""
-                                );
+                            Log.i(
+                                    TAG,
+                                    "TOKENS_PATH="
+                                            + new File(
+                                                    modelDirectory,
+                                                    "tokens.txt"
+                                            ).getAbsolutePath()
+                            );
 
-                        offlineTts =
-                                new OfflineTts(
-                                        null,
-                                        config
-                                );
+                            Log.i(
+                                    TAG,
+                                    "DATA_DIRECTORY="
+                                            + dataDirectory
+                            );
 
-                        int sampleRate =
-                                offlineTts.sampleRate();
+                            OfflineTtsConfig config =
+                                    TtsKt.getOfflineTtsConfig(
+                                            modelDirectory
+                                                    .getAbsolutePath(),
+                                            "en_US-ryan-medium.onnx",
+                                            "",
+                                            "",
+                                            "",
+                                            "tokens.txt",
+                                            dataDirectory,
+                                            "",
+                                            "",
+                                            "",
+                                            1,
+                                            false,
+                                            false,
+                                            "",
+                                            "",
+                                            "",
+                                            "",
+                                            "",
+                                            "",
+                                            ""
+                                    );
 
-                        Log.i(
-                                TAG,
-                                "PIPER_MODEL_READY sampleRate="
-                                        + sampleRate
-                        );
+                            offlineTts =
+                                    new OfflineTts(
+                                            null,
+                                            config
+                                    );
 
-                        createAudioTrack(sampleRate);
+                            int sampleRate =
+                                    offlineTts.sampleRate();
 
-                        ready.set(true);
+                            Log.i(
+                                    TAG,
+                                    "PIPER_MODEL_READY sampleRate="
+                                            + sampleRate
+                            );
 
-                        startWorkers();
+                            createAudioTrack(sampleRate);
 
-                        Log.i(TAG, "TTS_READY");
+                            ready.set(true);
+                            startWorkers();
 
-                    } catch (Exception error) {
-                        ready.set(false);
+                            Log.i(TAG, "TTS_READY");
 
-                        Log.e(
-                                TAG,
-                                "TTS_INITIALIZATION_ERROR",
-                                error
-                        );
-                    }
-                },
-                "OfflineTTS-Initialization"
-        );
+                        } catch (Exception error) {
+                            ready.set(false);
 
-        initializationThread.start();
-    }
+                            Log.e(
+                                    TAG,
+                                    "TTS_INITIALIZATION_ERROR",
+                                    error
+                            );
 
+                            if (listener != null) {
+                                listener.onError(error);
+                            }
+                        }
+                    },
+                    "OfflineTTS-Initialization"
+            );
+
+    initializationThread.start();
+}
     public boolean isReady() {
         return ready.get();
     }

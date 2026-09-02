@@ -1,5 +1,8 @@
 package com.interviewai.app;
-
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
@@ -13,11 +16,19 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
-
+import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import android.content.Intent;
+import android.net.Uri;
 
+import androidx.core.content.FileProvider;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -30,7 +41,10 @@ public class MainActivity extends BridgeActivity {
     private OfflineTtsManager offlineTtsManager;
     private Handler statusHandler;
     private long lastBackPressedTime = 0;
-
+private ProgressBar downloadProgress;
+private TextView dialogStatus;
+private TextView progressText;
+private ImageView successTick;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,11 +105,62 @@ public class MainActivity extends BridgeActivity {
 
         startOfflineTts();
     }
+private void showCheckingState() {
+    runOnUiThread(() -> {
+        if (dialogStatus != null) {
+            dialogStatus.setText("Checking assets...");
+        }
 
+        if (progressText != null) {
+            progressText.setVisibility(View.GONE);
+        }
+
+        if (downloadProgress != null) {
+            downloadProgress.setIndeterminate(true);
+        }
+
+        if (successTick != null) {
+            successTick.setVisibility(View.GONE);
+        }
+    });
+}
     private void startOfflineTts() {
         showDownloadDialog();
+ showCheckingState();
+       offlineTtsManager.initialize(
+        new ModelDownloader.DownloadListener() {
+            @Override
+            public void onStarted() {
+                updateDownloadDialog("Downloading Assets...");
+            }
 
-        offlineTtsManager.initialize();
+           @Override
+public void onProgress(int percent) {
+    if (downloadProgress != null) {
+        downloadProgress.setIndeterminate(false);
+    }
+
+    updateDownloadProgress(percent);
+}
+
+@Override
+public void onExtracting() {
+    showSettingUpState();
+}
+
+@Override
+public void onCompleted() {
+    updateDownloadDialog("Checking Assets...");
+}
+
+            @Override
+            public void onError(Exception error) {
+                updateDownloadDialog(
+                        "Download failed. Please restart the app."
+                );
+            }
+        }
+);
 
         statusHandler.postDelayed(
                 new Runnable() {
@@ -104,25 +169,31 @@ public class MainActivity extends BridgeActivity {
                         if (offlineTtsManager != null
                                 && offlineTtsManager.isReady()) {
 
-                            Log.i(TAG, "TTS_READY");
+                           Log.i(TAG, "TTS_READY");
 
-                            updateDownloadDialog(
-                                    "Voice assets ready"
-                            );
+updateDownloadDialog("Setup completed!");
 
-                            statusHandler.postDelayed(() -> {
-                                dismissDownloadDialog();
-                            }, 700);
+if (progressText != null) {
+    progressText.setText("Asset is ready.");
+}
 
-                            return;
+if (downloadProgress != null) {
+    downloadProgress.setIndeterminate(false);
+    downloadProgress.setVisibility(View.GONE);
+}
+
+if (successTick != null) {
+    successTick.setVisibility(View.VISIBLE);
+}
+
+statusHandler.postDelayed(() -> {
+    dismissDownloadDialog();
+}, 1200);
+
+return;
                         }
 
-                        if (downloadDialog != null
-                                && downloadDialog.isShowing()) {
-                            updateDownloadDialog(
-                                    "Downloading voice assets..."
-                            );
-                        }
+                        
 
                         statusHandler.postDelayed(
                                 this,
@@ -134,35 +205,143 @@ public class MainActivity extends BridgeActivity {
         );
     }
 
-    private void showDownloadDialog() {
-        runOnUiThread(() -> {
-            AlertDialog.Builder builder =
-                    new AlertDialog.Builder(this);
 
-            builder.setTitle("Please wait");
+    private void shareAppApk() {
+    try {
+        File apkFile =
+                new File(
+                        getCacheDir(),
+                        "skillzageai.apk"
+                );
 
-            builder.setMessage(
-                    "Downloading voice assets..."
-            );
+        try (
+                InputStream input =
+                        getAssets().open("skillzageai.apk");
 
-            builder.setCancelable(false);
+                OutputStream output =
+                        new FileOutputStream(apkFile)
+        ) {
+            byte[] buffer = new byte[8192];
+            int length;
 
-            downloadDialog = builder.create();
-            downloadDialog.show();
-        });
-    }
-
-    private void updateDownloadDialog(
-            String message
-    ) {
-        runOnUiThread(() -> {
-            if (downloadDialog != null
-                    && downloadDialog.isShowing()) {
-                downloadDialog.setMessage(message);
+            while ((length = input.read(buffer)) != -1) {
+                output.write(buffer, 0, length);
             }
-        });
-    }
+        }
 
+        Uri apkUri =
+                FileProvider.getUriForFile(
+                        this,
+                        getPackageName()
+                                + ".fileprovider",
+                        apkFile
+                );
+
+        Intent shareIntent =
+                new Intent(Intent.ACTION_SEND);
+
+        shareIntent.setType(
+                "application/vnd.android.package-archive"
+        );
+
+        shareIntent.putExtra(
+                Intent.EXTRA_STREAM,
+                apkUri
+        );
+
+        shareIntent.addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+        );
+
+        startActivity(
+                Intent.createChooser(
+                        shareIntent,
+                        "Share SkillzageAI"
+                )
+        );
+
+    } catch (Exception error) {
+        Log.e(
+                TAG,
+                "APK_SHARE_FAILED",
+                error
+        );
+
+        Toast.makeText(
+                this,
+                "Unable to share the app",
+                Toast.LENGTH_LONG
+        ).show();
+    }
+}
+  private void showDownloadDialog() {
+    runOnUiThread(() -> {
+        View dialogView = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_voice_assets, null);
+
+        dialogStatus = dialogView.findViewById(R.id.dialogStatus);
+        downloadProgress = dialogView.findViewById(R.id.downloadProgress);
+        progressText = dialogView.findViewById(R.id.progressText);
+successTick =
+        dialogView.findViewById(R.id.successTick);
+        successTick.setVisibility(View.GONE);
+        AlertDialog.Builder builder =
+                new AlertDialog.Builder(this);
+
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+
+        downloadDialog = builder.create();
+        downloadDialog.show();
+
+        if (downloadDialog.getWindow() != null) {
+            downloadDialog.getWindow()
+                    .setBackgroundDrawableResource(
+                            android.R.color.transparent
+                    );
+        }
+    });
+}
+
+private void updateDownloadProgress(int percent) {
+    runOnUiThread(() -> {
+        if (downloadProgress != null) {
+            downloadProgress.setProgress(percent);
+        }
+
+        if (progressText != null) {
+            progressText.setText(
+                    "Downloading Assets - " + percent + "%"
+            );
+        }
+    });
+}
+  private void showSettingUpState() {
+    runOnUiThread(() -> {
+        if (dialogStatus != null) {
+            dialogStatus.setText(
+                    "Setting up Assets, please wait..."
+            );
+        }
+
+        if (progressText != null) {
+            progressText.setText(
+                    "Preparing Assets..."
+            );
+        }
+
+        if (downloadProgress != null) {
+            downloadProgress.setIndeterminate(true);
+        }
+    });
+}
+private void updateDownloadDialog(String message) {
+    runOnUiThread(() -> {
+        if (dialogStatus != null) {
+            dialogStatus.setText(message);
+        }
+    });
+}
     private void dismissDownloadDialog() {
         runOnUiThread(() -> {
             if (downloadDialog != null
@@ -180,6 +359,10 @@ public class MainActivity extends BridgeActivity {
                     && offlineTtsManager.isReady();
         }
 
+        @JavascriptInterface
+public void shareApp() {
+    runOnUiThread(() -> shareAppApk());
+}
         @JavascriptInterface
         public void speakChunk(
                 String text,

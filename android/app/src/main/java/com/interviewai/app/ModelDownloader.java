@@ -23,24 +23,25 @@ public final class ModelDownloader {
     private static final String TAG = "OfflineTTS";
 
     private static final String MODEL_FOLDER =
-            "vits-piper-en_US-lessac-medium";
+            "vits-piper-en_US-ryan-medium";
 
     private static final String MODEL_URL =
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/"
-                    + "tts-models/vits-piper-en_US-lessac-medium.tar.bz2";
+                    + "tts-models/vits-piper-en_US-ryan-medium.tar.bz2";
 
     private final Context context;
 
-    public interface DownloadListener {
-        void onStarted();
+   public interface DownloadListener {
+    void onStarted();
 
-        void onProgress(int percent);
+    void onProgress(int percent);
 
-        void onCompleted();
+    void onExtracting();
 
-        void onError(Exception error);
-    }
+    void onCompleted();
 
+    void onError(Exception error);
+}
     public ModelDownloader(Context context) {
         this.context = context.getApplicationContext();
     }
@@ -58,7 +59,7 @@ public final class ModelDownloader {
         File modelFile =
                 new File(
                         modelDirectory,
-                        "en_US-lessac-medium.onnx"
+                        "en_US-ryan-medium.onnx"
                 );
 
         File tokensFile =
@@ -141,7 +142,9 @@ public final class ModelDownloader {
                     TAG,
                     "MODEL_EXTRACTION_START"
             );
-
+if (listener != null) {
+    listener.onExtracting();
+}
             extractArchive(
                     archive,
                     modelsDirectory
