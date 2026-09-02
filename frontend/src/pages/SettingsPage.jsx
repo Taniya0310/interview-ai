@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Share2 } from "lucide-react";
+import { X, Share2, LogOut } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-
+  const { logout } = useAuth();
+const [showLogoutModal, setShowLogoutModal] =
+  useState(false);
   function handleClearSession() {
     sessionStorage.removeItem("currentInterview");
     sessionStorage.removeItem("currentInterviewId");
@@ -11,6 +15,19 @@ export default function SettingsPage() {
 
     alert("Current interview session cleared.");
   }
+
+ function handleLogout() {
+  setShowLogoutModal(true);
+}
+
+function confirmLogout() {
+  logout();
+  setShowLogoutModal(false);
+
+  navigate("/login", {
+    replace: true
+  });
+}
 function handleShareApp() {
   if (window.AndroidTTS?.shareApp) {
     window.AndroidTTS.shareApp();
@@ -280,7 +297,34 @@ function handleShareApp() {
           </div>
         </div>
       </section>
+{/* Logout */}
+<section className="settings-section">
+  <div className="settings-card">
+    <div className="settings-item">
+      <div className="settings-icon">
+        <LogOut size={20} />
+      </div>
 
+      <div className="settings-content">
+        <h3>Log out</h3>
+
+        <p>
+          Sign out of your Interview AI account
+          on this device.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        className="settings-danger-action"
+        onClick={handleLogout}
+        aria-label="Log out"
+      >
+        <LogOut size={18} />
+      </button>
+    </div>
+  </div>
+</section>
       {/* About */}
       <section className="settings-section">
         <div className="section-heading">
@@ -381,6 +425,42 @@ function handleShareApp() {
           <small>Settings</small>
         </button>
       </nav>
+      {showLogoutModal && (
+  <div className="logout-modal-overlay">
+    <div className="logout-modal">
+      <div className="logout-modal-icon">
+        <LogOut size={24} />
+      </div>
+
+      <h2>Log out?</h2>
+
+      <p>
+        Are you sure you want to log out?
+      </p>
+
+      <div className="logout-modal-actions">
+        <button
+          type="button"
+          className="logout-cancel-btn"
+          onClick={() =>
+            setShowLogoutModal(false)
+          }
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          className="logout-confirm-btn"
+          onClick={confirmLogout}
+        >
+          Log out
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </main>
+    
   );
 }

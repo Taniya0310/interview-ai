@@ -1,0 +1,125 @@
+.profile-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 152, 0, 0.22),
+      transparent 38%
+    ),
+    linear-gradient(
+      135deg,
+      #fff7ed,
+      #ffffff 55%,
+      #ffedd5
+    );
+}
+
+.profile-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 32px;
+  border: 1px solid #fed7aa;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 18px 60px rgba(124, 45, 18, 0.16);
+  box-sizing: border-box;
+}
+
+.profile-card h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 34px;
+}
+
+.profile-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-card label {
+  margin-top: 10px;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.profile-card input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  color: #111827;
+  background: #ffffff;
+  font: inherit;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.profile-card input:focus {
+  border-color: #f28c00;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(242, 140, 0, 0.15);
+}
+
+.profile-card input:disabled {
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+.profile-card form button {
+  min-height: 50px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 12px;
+  color: #ffffff;
+  background: #f28c00;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.profile-success {
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: #18794e;
+  background: #ecfdf3;
+  font-size: 13px;
+}
+
+@media (max-width: 520px) {
+  .profile-page {
+    align-items: flex-start;
+    padding: 20px 14px;
+  }
+
+  .profile-card {
+    margin-top: 6vh;
+    padding: 26px 20px;
+    border-radius: 20px;
+  }
+
+  .profile-card h1 {
+    font-size: 30px;
+  }
+}
+.profile-back {
+  display: block;
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+  color: #d97706;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}

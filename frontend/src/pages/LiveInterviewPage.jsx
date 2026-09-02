@@ -1,31 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createTtsChunker } from "../services/ttsChunker";
+import {
+  authenticatedFetch
+} from "../services/authApi";
+import "../styles/liveInterview.css";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
 
 async function api(path, options = {}) {
-  const response = await fetch(`${API}${path}`, options);
-
-  if (!response.ok) {
-    let message = "Request failed";
-
-    try {
-      const data = await response.json();
-      message = data.error || message;
-    } catch {
-      // Ignore invalid error response.
-    }
-
-    throw new Error(message);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
+  return authenticatedFetch(
+    path,
+    options
+  );
 }
 
 export default function LiveInterviewPage() {
@@ -176,7 +164,38 @@ const TTS_END_DELAY = 600;
       mountedRef.current = false;
     };
   }, [navigate]);
+useEffect(() => {
+  if (!interview?.id) {
+    return;
+  }
 
+  const interviewId = interview.id;
+
+  function sendHeartbeat() {
+    authenticatedFetch(
+      `/interviews/${interviewId}/heartbeat`,
+      {
+        method: "POST"
+      }
+    ).catch((error) => {
+      console.warn(
+        "Interview heartbeat failed:",
+        error
+      );
+    });
+  }
+
+  sendHeartbeat();
+
+  const heartbeatTimer = setInterval(
+    sendHeartbeat,
+    15000
+  );
+
+  return () => {
+    clearInterval(heartbeatTimer);
+  };
+}, [interview?.id]);
   // ============================================================
   // KEEP REFS IN SYNC
   // ============================================================
@@ -831,7 +850,30 @@ Please take your time. I am listening.
       );
     }
   }
+async function quitInterview() {
+  if (!interview?.id) {
+    navigate("/dashboard");
+    return;
+  }
 
+  try {
+    await authenticatedFetch(
+      `/interviews/${interview.id}/quit`,
+      {
+        method: "POST"
+      }
+    );
+  } catch (error) {
+    console.warn(
+      "Unable to mark interview as quit:",
+      error
+    );
+  }
+
+  navigate("/dashboard", {
+    replace: true
+  });
+}
   // ============================================================
   // FINISH INTERVIEW
   // ============================================================
@@ -1601,6 +1643,13 @@ ttsChunkIdRef.current = 0;
             ? "Analyzing"
             : "Ready"}
         </div>
+       <button
+  type="button"
+  className="exit-interview-btn"
+  onClick={quitInterview}
+>
+  Exit Interview
+</button>
       </header>
 
       {/* Camera */}

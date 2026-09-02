@@ -1,31 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import {
+  authenticatedFetch
+} from "../services/authApi";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
 
 async function api(path, options = {}) {
-  const response = await fetch(`${API}${path}`, options);
-
-  if (!response.ok) {
-    let message = "Request failed";
-
-    try {
-      const data = await response.json();
-      message = data.error || data.message || message;
-    } catch {
-      // Ignore invalid response body
-    }
-
-    throw new Error(message);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
+  return authenticatedFetch(
+    path,
+    options
+  );
 }
 
 function formatLabel(value) {

@@ -1,29 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import { authenticatedFetch } from "../services/authApi";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
 
-async function api(path) {
-  const response = await fetch(`${API}${path}`);
-
-  if (!response.ok) {
-    let message = "Request failed";
-
-    try {
-      const data = await response.json();
-      message = data.error || message;
-    } catch {}
-
-    throw new Error(message);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
+async function api(path, options = {}) {
+  return authenticatedFetch(path, options);
 }
 
 function getRadarPoints(scores, radius = 72, center = 90) {

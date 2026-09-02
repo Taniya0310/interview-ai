@@ -1,0 +1,21 @@
+.exit-interview-btn {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #dc2626;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.exit-interview-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.exit-interview-btn:active {
+  transform: translateY(0);
+}

@@ -1,31 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import PageLoader from "../components/PageLoader";
+import { authenticatedFetch } from "../services/authApi";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
 
-async function api(path) {
-  const response = await fetch(`${API}${path}`);
-
-  if (!response.ok) {
-    let message = "Request failed";
-
-    try {
-      const data = await response.json();
-      message = data.error || message;
-    } catch {}
-
-    throw new Error(message);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
+async function api(path, options = {}) {
+  return authenticatedFetch(path, options);
 }
-
 function getAnswers(report) {
   if (Array.isArray(report?.answers)) {
     return report.answers;
@@ -101,30 +84,43 @@ export default function ProcessingPage() {
         const answers =
           getAnswers(report);
 
-        const total =
-          Number(
-            report?.total_questions ??
-              report?.totalQuestions ??
-              report?.question_count ??
-              report?.questionCount ??
-              answers.length
-          ) || answers.length;
+       const getQuestionKey = (answer) =>
+  String(
+    answer.position ??
+      answer.interview_question_id ??
+      answer.question_id
+  );
 
-        /*
-         * An answer is considered complete when
-         * the backend has a result for it.
-         */
-        const completed =
-          answers.filter(
-            (answer) =>
-              answer?.result &&
-              !answer?.result?.metricsPending
-          ).length;
+const uniqueQuestions = new Set(
+  answers.map(getQuestionKey)
+);
 
-        setTotalAnswers(total);
-        setCompletedAnswers(
-          completed
-        );
+const completedQuestions = new Set(
+  answers
+    .filter((answer) => {
+      const result = answer?.result;
+
+      return (
+        result &&
+        (
+          result.metricsPending === false ||
+          (
+            !Object.prototype.hasOwnProperty.call(
+              result,
+              "metricsPending"
+            )
+          )
+        )
+      );
+    })
+    .map(getQuestionKey)
+);
+
+const total = uniqueQuestions.size;
+const completed = completedQuestions.size;
+
+       setTotalAnswers(total);
+setCompletedAnswers(completed);
 
         if (total > 0) {
           const calculated =
@@ -133,24 +129,21 @@ export default function ProcessingPage() {
                 100
             );
 
-          setProgress(
-            Math.min(
-              95,
-              Math.max(
-                10,
-                calculated
-              )
-            )
-          );
+         setProgress(
+  Math.min(
+    100,
+    Math.max(10, calculated)
+  )
+);
         }
 
         /*
          * The interview report is ready when
          * every expected answer has a result.
          */
-        const reportReady =
-          total > 0 &&
-          completed >= total;
+       const reportReady =
+  total > 0 &&
+  completed === total;
 
         if (reportReady) {
           setProgress(100);

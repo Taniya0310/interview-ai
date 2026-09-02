@@ -101,9 +101,7 @@ private ImageView successTick;
         statusHandler = new Handler(Looper.getMainLooper());
 
         offlineTtsManager =
-                new OfflineTtsManager(this);
-
-        startOfflineTts();
+        new OfflineTtsManager(this);
     }
 private void showCheckingState() {
     runOnUiThread(() -> {
@@ -362,6 +360,18 @@ private void updateDownloadDialog(String message) {
         @JavascriptInterface
 public void shareApp() {
     runOnUiThread(() -> shareAppApk());
+}
+
+@JavascriptInterface
+public void startModelCheck() {
+    runOnUiThread(() -> {
+        if (
+                offlineTtsManager != null &&
+                !offlineTtsManager.isReady()
+        ) {
+            startOfflineTts();
+        }
+    });
 }
         @JavascriptInterface
         public void speakChunk(
