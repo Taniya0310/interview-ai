@@ -1,11 +1,11 @@
 .profile-page {
-  min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 24px 16px 150px;
   box-sizing: border-box;
+  overflow-y: auto;
   background:
     radial-gradient(
       circle at top left,
@@ -23,6 +23,7 @@
 .profile-card {
   width: 100%;
   max-width: 480px;
+  margin-bottom: 40px;
   padding: 32px;
   border: 1px solid #fed7aa;
   border-radius: 24px;
@@ -35,6 +36,7 @@
   margin: 0;
   color: #111827;
   font-size: 34px;
+  line-height: 1.2;
 }
 
 .profile-card form {
@@ -74,7 +76,112 @@
   background: #f9fafb;
 }
 
-.profile-card form button {
+/* Custom occupation dropdown */
+
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.profile-card form .custom-select-button {
+  width: 100% !important;
+  min-height: 52px !important;
+  margin: 0 !important;
+  padding: 0 15px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border: 2px solid #f28c00 !important;
+  border-radius: 12px !important;
+  color: #7c2d12 !important;
+  background: #fff7ed !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.custom-select-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(242, 140, 0, 0.18) !important;
+}
+
+.custom-select-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.custom-select-arrow {
+  color: #f28c00;
+  font-size: 12px;
+}
+
+.custom-select-menu {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  padding: 8px !important;
+  border: 2px solid #fdba74;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(124, 45, 18, 0.18);
+  box-sizing: border-box;
+}
+
+.profile-card form .custom-select-option {
+  width: 100% !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  color: #7c2d12 !important;
+  background: #ffffff !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.profile-card form .custom-select-option:hover,
+.profile-card form .custom-select-option:focus {
+  color: #7c2d12 !important;
+  background: #fff7ed !important;
+  outline: none;
+}
+
+.occupation-radio {
+  width: 21px;
+  height: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid #f28c00;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.occupation-radio-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #f28c00;
+}
+
+/* Buttons */
+
+.profile-card form > button {
+  width: 100%;
   min-height: 50px;
   margin-top: 16px;
   border: 0;
@@ -86,30 +193,11 @@
   cursor: pointer;
 }
 
-.profile-success {
-  padding: 10px 12px;
-  border-radius: 9px;
-  color: #18794e;
-  background: #ecfdf3;
-  font-size: 13px;
+.profile-card form > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
-@media (max-width: 520px) {
-  .profile-page {
-    align-items: flex-start;
-    padding: 20px 14px;
-  }
-
-  .profile-card {
-    margin-top: 6vh;
-    padding: 26px 20px;
-    border-radius: 20px;
-  }
-
-  .profile-card h1 {
-    font-size: 30px;
-  }
-}
 .profile-back {
   display: block;
   margin: 0 0 24px;
@@ -122,4 +210,48 @@
   font-weight: 750;
   text-align: left;
   cursor: pointer;
+}
+
+.profile-success {
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: #18794e;
+  background: #ecfdf3;
+  font-size: 13px;
+}
+
+/* Mobile layout and bottom navigation spacing */
+
+@media (max-width: 650px) {
+  .profile-page {
+    display: block;
+    min-height: 100dvh;
+    padding: 16px 12px
+      calc(150px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .profile-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto 40px;
+    padding: 22px 16px;
+    border-radius: 20px;
+  }
+
+  .profile-card h1 {
+    font-size: 28px;
+  }
+
+  .profile-card input,
+  .custom-select-button {
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
+
+  .profile-card form > button {
+    min-height: 48px;
+    margin-bottom: 8px;
+  }
 }

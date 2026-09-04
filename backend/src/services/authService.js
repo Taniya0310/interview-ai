@@ -1,5 +1,7 @@
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } =
+  require("google-auth-library");
 
 const userModel =
   require("../models/userModel");
@@ -13,12 +15,25 @@ const refreshTokenModel =
 const generateOtp =
   require("../utils/generateOtp");
 
+const mailService =
+  require("./mailService");
+
 const {
   jwtAccessSecret,
   jwtRefreshSecret,
   accessTokenExpiresIn,
-  refreshTokenDays
+  refreshTokenDays,
+  googleClientId,
+  googleClientSecret,
+  googleRedirectUri
 } = require("../config/env");
+
+const googleClient =
+  new OAuth2Client(
+    googleClientId,
+    googleClientSecret,
+    googleRedirectUri
+  );
 
 function hashValue(value) {
   return crypto
@@ -59,6 +74,36 @@ function createRefreshToken(user) {
   );
 }
 
+async function createSession(user) {
+  const accessToken =
+    createAccessToken(user);
+
+  const refreshToken =
+    createRefreshToken(user);
+
+  const refreshTokenExpiresAt =
+    new Date(
+      Date.now() +
+        refreshTokenDays *
+          24 *
+          60 *
+          60 *
+          1000
+    );
+
+  await refreshTokenModel.saveRefreshToken(
+    user.id,
+    hashValue(refreshToken),
+    refreshTokenExpiresAt
+  );
+
+  return {
+    user,
+    accessToken,
+    refreshToken
+  };
+}
+
 async function requestEmailOtp(email) {
   const cleanEmail =
     email.toLowerCase().trim();
@@ -85,12 +130,13 @@ async function requestEmailOtp(email) {
     expiresAt
   );
 
-  console.log(
-    `[AUTH] OTP for ${cleanEmail}: ${otp}`
+  await mailService.sendOtpEmail(
+    cleanEmail,
+    otp
   );
 
   return {
-    message: "OTP generated successfully"
+    message: "OTP sent successfully"
   };
 }
 
@@ -142,36 +188,78 @@ async function verifyEmailOtp(email, otp) {
     storedOtp.id
   );
 
-  const accessToken =
-    createAccessToken(user);
+  return createSession(user);
+}
 
-  const refreshToken =
-    createRefreshToken(user);
+function getGoogleAuthUrl() {
+  return googleClient.generateAuthUrl({
+    access_type: "offline",
+    scope: [
+      "openid",
+      "email",
+      "profile"
+    ],
+    prompt: "select_account"
+  });
+}
 
-  const refreshTokenExpiresAt =
-    new Date(
-      Date.now() +
-        refreshTokenDays *
-          24 *
-          60 *
-          60 *
-          1000
+async function handleGoogleCallback(code) {
+  const { tokens } =
+    await googleClient.getToken(code);
+
+  const ticket =
+    await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: googleClientId
+    });
+
+  const payload =
+    ticket.getPayload();
+
+  if (
+    !payload ||
+    !payload.email ||
+    !payload.sub
+  ) {
+    throw new Error(
+      "Invalid Google account"
+    );
+  }
+
+  const email =
+    payload.email.toLowerCase().trim();
+
+  let user =
+    await userModel.findUserByGoogleId(
+      payload.sub
     );
 
-  await refreshTokenModel.saveRefreshToken(
-    user.id,
-    hashValue(refreshToken),
-    refreshTokenExpiresAt
-  );
+  if (!user) {
+    user =
+      await userModel.findUserByEmail(
+        email
+      );
+  }
 
-  return {
-    user,
-    accessToken,
-    refreshToken
-  };
+  if (!user) {
+    user = await userModel.createUser({
+      email,
+      googleId: payload.sub,
+      authProvider: "google"
+    });
+  }
+
+  user =
+    await userModel.markUserVerified(
+      user.user_id
+    );
+
+  return createSession(user);
 }
 
 module.exports = {
   requestEmailOtp,
-  verifyEmailOtp
+  verifyEmailOtp,
+  getGoogleAuthUrl,
+  handleGoogleCallback
 };

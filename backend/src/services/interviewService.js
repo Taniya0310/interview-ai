@@ -13,14 +13,15 @@ async function createInterview(data, userId) {
   }
 
   const allowedTypes = [
-    "technical",
-    "non-technical"
-  ];
+  "technical",
+  "non-technical",
+  "mixed",
+];
 
   if (!allowedTypes.includes(interviewType)) {
     throw Object.assign(
       new Error(
-        "interviewType must be technical or non-technical"
+        "interviewType must be technical, non-technical, or mixed"
       ),
       { status: 400 }
     );
@@ -55,17 +56,26 @@ VALUES (
     const interview =
       interviewResult.rows[0];
 
-    const questionResult =
-      await client.query(
-        `
-          SELECT *
-          FROM questions
-          WHERE interview_type = $1
-            AND is_active = TRUE
-          ORDER BY created_at ASC
-        `,
-        [interviewType]
-      );
+   const questionResult =
+  await client.query(
+    `
+      SELECT *
+      FROM questions
+      WHERE is_active = TRUE
+        AND (
+          interview_type = $1
+          OR (
+            $1 = 'mixed'
+            AND interview_type IN (
+              'technical',
+              'non-technical'
+            )
+          )
+        )
+      ORDER BY created_at ASC
+    `,
+    [interviewType]
+  );
 
     if (questionResult.rows.length === 0) {
       throw Object.assign(

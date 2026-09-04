@@ -1,6 +1,10 @@
 const authService =
   require("../services/authService");
 
+const {
+  frontendUrl
+} = require("../config/env");
+
 async function sendOtp(req, res, next) {
   try {
     const { email } = req.body;
@@ -49,7 +53,48 @@ async function verifyOtp(req, res, next) {
   }
 }
 
+function googleAuth(req, res, next) {
+  try {
+    const authUrl =
+      authService.getGoogleAuthUrl();
+
+    res.redirect(authUrl);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function googleCallback(req, res, next) {
+  try {
+    const { code } = req.query;
+
+    if (!code) {
+      return res.status(400).json({
+        error: "Google authorization code is missing"
+      });
+    }
+
+    const result =
+      await authService.handleGoogleCallback(
+        code
+      );
+
+    const params = new URLSearchParams({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
+    });
+
+    res.redirect(
+      `${frontendUrl}/google-callback?${params.toString()}`
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   sendOtp,
-  verifyOtp
+  verifyOtp,
+  googleAuth,
+  googleCallback
 };

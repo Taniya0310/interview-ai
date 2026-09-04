@@ -1,6 +1,11 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:4000/api";
+
 export default function GoogleSignInButton() {
   function handleGoogleSignIn() {
-    alert("Google Sign-In will be connected later.");
+    window.location.href =
+      `${API_BASE_URL}/auth/google`;
   }
 
   return (

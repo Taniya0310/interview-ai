@@ -2,6 +2,21 @@ const express = require("express");
 
 const app = express();
 
+// Request and response logging
+app.use((req, res, next) => {
+  console.log(
+    `[REQUEST] ${req.method} ${req.path}`
+  );
+
+  res.on("finish", () => {
+    console.log(
+      `[RESPONSE] ${req.method} ${req.path} ${res.statusCode}`
+    );
+  });
+
+  next();
+});
+
 const authMiddleware =
   require("./middleware/authMiddleware");
 
@@ -27,7 +42,10 @@ app.use(
   "/api/auth",
   require("./routes/authRoutes")
 );
-
+app.use(
+  "/api/training",
+  require("./routes/trainingRoutes")
+);
 app.use(
   "/api/profile",
   authMiddleware,

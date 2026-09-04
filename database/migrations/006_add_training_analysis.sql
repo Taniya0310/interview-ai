@@ -1,0 +1,2 @@
+ALTER TABLE training_answers
+ADD COLUMN IF NOT EXISTS analysis JSONB;

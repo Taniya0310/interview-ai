@@ -7,6 +7,8 @@ async function findProfileByUserId(userId) {
         user_id,
         full_name,
         phone_number,
+        occupation,
+        institution_company,
         created_at,
         updated_at
       FROM profiles
@@ -30,6 +32,8 @@ async function createProfile(userId) {
         user_id,
         full_name,
         phone_number,
+        occupation,
+        institution_company,
         created_at,
         updated_at
     `,
@@ -46,32 +50,42 @@ async function createProfile(userId) {
 async function updateProfile(
   userId,
   fullName,
-  phoneNumber
+  phoneNumber,
+  occupation,
+  institutionCompany
 ) {
   const result = await db.query(
     `
       INSERT INTO profiles (
         user_id,
         full_name,
-        phone_number
+        phone_number,
+        occupation,
+        institution_company
       )
-      VALUES ($1, $2, $3)
+      VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (user_id)
       DO UPDATE SET
         full_name = EXCLUDED.full_name,
         phone_number = EXCLUDED.phone_number,
+        occupation = EXCLUDED.occupation,
+        institution_company = EXCLUDED.institution_company,
         updated_at = CURRENT_TIMESTAMP
       RETURNING
         user_id,
         full_name,
         phone_number,
+        occupation,
+        institution_company,
         created_at,
         updated_at
     `,
     [
       userId,
       fullName || null,
-      phoneNumber || null
+      phoneNumber || null,
+      occupation || null,
+      institutionCompany || null
     ]
   );
 

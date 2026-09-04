@@ -11,7 +11,28 @@ module.exports = {
 
   geminiApiKey:
     process.env.GEMINI_API_KEY || "",
+googleClientId:
+  process.env.GOOGLE_CLIENT_ID || "",
 
+googleClientSecret:
+  process.env.GOOGLE_CLIENT_SECRET || "",
+
+googleRedirectUri:
+  process.env.GOOGLE_REDIRECT_URI || "",
+
+frontendUrl:
+  process.env.FRONTEND_URL || "http://localhost",
+    tenantId:
+  process.env.TENANT_ID || "",
+
+clientId:
+  process.env.CLIENT_ID || "",
+
+clientSecret:
+  process.env.CLIENT_SECRET || "",
+
+mailbox:
+  process.env.MAILBOX || "",
   geminiModel:
     process.env.GEMINI_MODEL ||
     "gemini-2.5-flash",

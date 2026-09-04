@@ -43,6 +43,16 @@ async function updateProfile(
       ? profileData.phoneNumber.trim()
       : "";
 
+  const occupation =
+    typeof profileData.occupation === "string"
+      ? profileData.occupation.trim().toLowerCase()
+      : "";
+
+  const institutionCompany =
+    typeof profileData.institutionCompany === "string"
+      ? profileData.institutionCompany.trim()
+      : "";
+
   if (fullName.length > 120) {
     throw new Error(
       "Full name must be 120 characters or less"
@@ -55,10 +65,31 @@ async function updateProfile(
     );
   }
 
+  if (
+    occupation &&
+    ![
+      "student",
+      "professional",
+      "teacher"
+    ].includes(occupation)
+  ) {
+    throw new Error(
+      "Invalid occupation"
+    );
+  }
+
+  if (institutionCompany.length > 150) {
+    throw new Error(
+      "Institution or company must be 150 characters or less"
+    );
+  }
+
   return profileModel.updateProfile(
     userId,
     fullName,
-    phoneNumber
+    phoneNumber,
+    occupation,
+    institutionCompany
   );
 }
 

@@ -12,7 +12,7 @@ import com.k2fsa.sherpa.onnx.GeneratedAudio;
 import com.k2fsa.sherpa.onnx.OfflineTts;
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig;
 import com.k2fsa.sherpa.onnx.TtsKt;
-
+import java.util.concurrent.ThreadLocalRandom;
 import java.io.File;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -358,7 +358,7 @@ public final class OfflineTtsManager {
                         engine.generate(
                                 job.text,
                                 0,
-                                1.0f
+                                0.8f
                         );
 
                 long generationEnd =
@@ -434,7 +434,9 @@ public final class OfflineTtsManager {
         }
     }
 
+    
     private void playbackLoop() {
+        boolean hasPlayedChunk = false;
         Process.setThreadPriority(
                 Process.THREAD_PRIORITY_AUDIO
         );
@@ -486,7 +488,31 @@ public final class OfflineTtsManager {
                                 + " remainingQueue="
                                 + playbackQueue.size()
                 );
+if (hasPlayedChunk) {
+    double pauseSeconds =
+            Math.round(
+                    ThreadLocalRandom.current().nextDouble(0.0, 1.0)
+                            * 0.5
+                            * 100.0
+            ) / 100.0;
 
+    int pauseSamples =
+            (int) Math.round(
+                    pauseSeconds * chunk.sampleRate
+            );
+
+    if (pauseSamples > 0) {
+        short[] silence = new short[pauseSamples];
+
+        track.write(
+                silence,
+                0,
+                silence.length,
+                AudioTrack.WRITE_BLOCKING
+        );
+    }
+}
+hasPlayedChunk = true;
                 int written =
                         track.write(
                                 chunk.samples,

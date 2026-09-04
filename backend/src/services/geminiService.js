@@ -158,7 +158,7 @@ async function evaluateAudioAnswer({
   question,
   expectedTopics = [],
   referenceAnswer = "",
-  answerKeyPoints = [],
+  answerKeyPoints = []
 }) {
   if (!geminiApiKey) {
     return {
@@ -168,77 +168,89 @@ async function evaluateAudioAnswer({
       missingPoints: [],
       needsFollowUp: false,
       followUpQuestion: null,
-      questionFeedback: "Gemini is not configured",
+      questionFeedback:
+        "Gemini is not configured"
     };
   }
 
-  const prompt = `
-Evaluate the candidate's spoken interview answer.
+  if (!filePath) {
+    throw new Error(
+      "Audio file path is required"
+    );
+  }
+
+ const prompt = `
+Evaluate this training answer.
 
 Question:
 ${question}
 
-Expected topics:
-${JSON.stringify(expectedTopics || [])}
-
 Reference answer:
-${referenceAnswer || "[No reference answer provided]"}
+${referenceAnswer || "None"}
 
-Required answer points:
-${JSON.stringify(answerKeyPoints || [])}
+Key points:
+${JSON.stringify(
+  answerKeyPoints?.length
+    ? answerKeyPoints
+    : expectedTopics || []
+)}
 
-Instructions:
-- First transcribe the complete spoken answer.
-- Compare the candidate's meaning with the reference answer.
-- Accept different wording when the meaning is approximately correct.
-- Do not require an exact match with the reference answer.
-- Mark passed as true when the answer is substantially correct.
-- Mark passed as false when important concepts are missing, incorrect, or unrelated.
-- List only the important missing concepts in missingPoints.
-- Ask a follow-up question only about the missing points.
-- If the answer is sufficient, needsFollowUp must be false and followUpQuestion must be null.
-- score must be a number from 0 to 100.
+Analyze the attached audio and return ONLY valid JSON:
 
-Return ONLY valid JSON:
 {
-  "transcript": "complete transcript of the candidate answer",
+  "transcript": "complete transcription",
   "passed": true,
   "score": 0,
   "missingPoints": [],
   "needsFollowUp": false,
   "followUpQuestion": null,
-  "questionFeedback": "short feedback"
+  "questionFeedback": "short useful feedback"
 }
+
+Rules:
+- Score from 0 to 100.
+- Accept different wording with the same meaning.
+- Ask one short follow-up only if the answer is incomplete.
 `;
 
-  const result = await sendAudioToGemini({
-    filePath,
-    mimeType,
-    prompt,
-    timeout: 60000,
-  });
+  const result =
+    await sendAudioToGemini({
+      filePath,
+      mimeType,
+      prompt,
+      timeout: 60000
+    });
 
-  logger.info("Combined audio evaluation completed", {
-    transcript: result.transcript || "[Transcript unavailable]",
-    passed: result.passed,
-    score: result.score,
-    missingPoints: result.missingPoints,
-    needsFollowUp: result.needsFollowUp,
-    followUpQuestion: result.followUpQuestion,
-    questionFeedback: result.questionFeedback,
-  });
-
-  return {
+  const analysis = {
     transcript: result.transcript || "",
     passed: Boolean(result.passed),
     score: Number(result.score) || 0,
-    missingPoints: Array.isArray(result.missingPoints)
+    missingPoints: Array.isArray(
+      result.missingPoints
+    )
       ? result.missingPoints
       : [],
-    needsFollowUp: Boolean(result.needsFollowUp),
-    followUpQuestion: result.followUpQuestion || null,
-    questionFeedback: result.questionFeedback || null,
+    needsFollowUp: Boolean(
+      result.needsFollowUp
+    ),
+    followUpQuestion:
+      result.followUpQuestion || null,
+    questionFeedback:
+      result.questionFeedback || ""
   };
+
+  logger.info(
+    "Training audio evaluation completed",
+    {
+      mimeType,
+      score: analysis.score,
+      passed: analysis.passed,
+      needsFollowUp:
+        analysis.needsFollowUp
+    }
+  );
+
+  return analysis;
 }
 function isRetryableError(error) {
   return (

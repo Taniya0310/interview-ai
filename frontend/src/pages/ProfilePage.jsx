@@ -9,48 +9,54 @@ import {
 
 import "../styles/profile.css";
 
+const occupationOptions = [
+  {
+    value: "student",
+    label: "Student"
+  },
+  {
+    value: "professional",
+    label: "Professional"
+  },
+  {
+    value: "teacher",
+    label: "Teacher"
+  }
+];
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [fullName, setFullName] =
+  const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [institutionCompany, setInstitutionCompany] =
     useState("");
 
-  const [phoneNumber, setPhoneNumber] =
-    useState("");
-
-  const [editing, setEditing] =
+  const [occupationOpen, setOccupationOpen] =
     useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [message, setMessage] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadProfile() {
       try {
-        const profile =
-          await getProfile();
+        const profile = await getProfile();
 
-        setFullName(
-          profile.full_name || ""
-        );
-
-        setPhoneNumber(
-          profile.phone_number || ""
+        setFullName(profile.full_name || "");
+        setPhoneNumber(profile.phone_number || "");
+        setOccupation(profile.occupation || "");
+        setInstitutionCompany(
+          profile.institution_company || ""
         );
       } catch (requestError) {
         setError(
           requestError.message ||
-          "Unable to load profile."
+            "Unable to load profile."
         );
       } finally {
         setLoading(false);
@@ -66,36 +72,67 @@ export default function ProfilePage() {
     setError("");
     setMessage("");
 
+    const cleanFullName = fullName.trim();
+    const cleanPhoneNumber = phoneNumber.trim();
+    const cleanOccupation = occupation.trim();
+    const cleanInstitutionCompany =
+      institutionCompany.trim();
+
+    if (!cleanFullName) {
+      setError("Full name is required.");
+      return;
+    }
+
+    if (!cleanOccupation) {
+      setError("Please select your occupation.");
+      return;
+    }
+
+    if (!cleanInstitutionCompany) {
+      setError(
+        "Institution or company is required."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
 
       const updatedProfile =
         await updateProfile({
-          fullName: fullName.trim(),
-          phoneNumber: phoneNumber.trim()
+          fullName: cleanFullName,
+          phoneNumber: cleanPhoneNumber,
+          occupation: cleanOccupation,
+          institutionCompany:
+            cleanInstitutionCompany
         });
 
-      setFullName(
-        updatedProfile.full_name || ""
-      );
-
+      setFullName(updatedProfile.full_name || "");
       setPhoneNumber(
         updatedProfile.phone_number || ""
       );
-
-      setEditing(false);
-      setMessage(
-        "Profile saved successfully."
+      setOccupation(
+        updatedProfile.occupation || ""
       );
+      setInstitutionCompany(
+        updatedProfile.institution_company || ""
+      );
+
+      setMessage("Profile saved successfully.");
     } catch (requestError) {
       setError(
         requestError.message ||
-        "Unable to save profile."
+          "Unable to save profile."
       );
     } finally {
       setSaving(false);
     }
   }
+
+  const selectedOccupation =
+    occupationOptions.find(
+      (option) => option.value === occupation
+    )?.label || "Select occupation";
 
   if (loading) {
     return (
@@ -110,35 +147,29 @@ export default function ProfilePage() {
   return (
     <main className="profile-page">
       <section className="profile-card">
-       <button
-  type="button"
-  className="profile-back"
-  onClick={() => navigate("/dashboard")}
->
-  ← Back
-</button>
+        <button
+          type="button"
+          className="profile-back"
+          onClick={() => navigate("/dashboard")}
+        >
+          ← Back
+        </button>
 
-        <p className="eyebrow">
-          PROFILE
-        </p>
+        <p className="eyebrow">PROFILE</p>
 
         <h1>Your profile</h1>
 
-        <p>
-          Manage your personal information.
-        </p>
+        <p>Manage your personal information.</p>
 
         <form onSubmit={handleSave}>
-          <label htmlFor="fullName">
-            Full name
-          </label>
+          <label htmlFor="fullName">Full name</label>
 
           <input
             id="fullName"
             type="text"
             value={fullName}
             placeholder="Enter your full name"
-            disabled={false}
+            disabled={saving}
             onChange={(event) =>
               setFullName(event.target.value)
             }
@@ -165,16 +196,89 @@ export default function ProfilePage() {
             type="tel"
             value={phoneNumber}
             placeholder="Enter your phone number"
-            disabled={false}
+            disabled={saving}
             onChange={(event) =>
               setPhoneNumber(event.target.value)
             }
           />
 
+          <label htmlFor="occupation">
+            Occupation
+          </label>
+
+          <div className="custom-select">
+            <button
+              type="button"
+              className="custom-select-button"
+              disabled={saving}
+              onClick={() =>
+                setOccupationOpen(
+                  !occupationOpen
+                )
+              }
+            >
+              <span>{selectedOccupation}</span>
+
+              <span className="custom-select-arrow">
+                {occupationOpen ? "▲" : "▼"}
+              </span>
+            </button>
+
+           {occupationOpen && (
+  <div className="custom-select-menu">
+    {occupationOptions.map((option) => {
+      const isSelected =
+        occupation === option.value;
+
+      return (
+        <button
+          type="button"
+          key={option.value}
+          className="custom-select-option"
+          onClick={() => {
+            setOccupation(option.value);
+            setOccupationOpen(false);
+          }}
+        >
+          <span
+            className={
+              isSelected
+                ? "occupation-radio selected"
+                : "occupation-radio"
+            }
+          >
+            {isSelected && (
+              <span className="occupation-radio-dot" />
+            )}
+          </span>
+
+          <span>{option.label}</span>
+        </button>
+      );
+    })}
+  </div>
+)}
+          </div>
+
+          <label htmlFor="institutionCompany">
+            Institution / Company
+          </label>
+
+          <input
+            id="institutionCompany"
+            type="text"
+            value={institutionCompany}
+            placeholder="Enter institution or company"
+            disabled={saving}
+            onChange={(event) =>
+              setInstitutionCompany(
+                event.target.value
+              )
+            }
+          />
+
           {error && (
-            <p className="auth-error">
-              {error}
-            </p>
+            <p className="auth-error">{error}</p>
           )}
 
           {message && (
@@ -183,26 +287,9 @@ export default function ProfilePage() {
             </p>
           )}
 
-          {editing ? (
-            <button
-              type="submit"
-              disabled={saving}
-            >
-              {saving
-                ? "Saving..."
-                : "Save Profile"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setMessage("");
-                setEditing(true);
-              }}
-            >
-              Edit Profile
-            </button>
-          )}
+          <button type="submit" disabled={saving}>
+            {saving ? "Saving..." : "Save Profile"}
+          </button>
         </form>
       </section>
     </main>

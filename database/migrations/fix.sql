@@ -1,0 +1,2 @@
+ALTER TABLE training_answers
+DROP CONSTRAINT IF EXISTS training_answers_training_session_id_question_id_key;

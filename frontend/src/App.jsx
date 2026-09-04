@@ -7,10 +7,12 @@ import {
   useParams,
   useLocation
 } from "react-router-dom";
-
+import TrainingSetupPage
+  from "./pages/TrainingSetupPage";
 import { useEffect, useState } from "react";
 import "./styles/auth.css";
-
+import TrainingPage
+  from "./pages/TrainingPage";
 import {
   AuthProvider,
   useAuth
@@ -34,12 +36,14 @@ import ResultsPage from "./pages/ResultsPage";
 import AnswerDetailPage from "./pages/AnswerDetailPage";
 import InterviewHistoryPage from "./pages/InterviewHistoryPage";
 import SettingsPage from "./pages/SettingsPage";
-
+import TrainingDeviceCheckPage
+  from "./pages/TrainingDeviceCheckPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import QuestionsPage from "./pages/admin/QuestionsPage";
 import CreateQuestionPage from "./pages/admin/CreateQuestionPage";
 import EditQuestionPage from "./pages/admin/EditQuestionPage";
-
+import GoogleCallbackPage
+  from "./pages/GoogleCallbackPage";
 function AdminDashboardRoute() {
   const navigate = useNavigate();
 
@@ -176,7 +180,10 @@ function App() {
           path="/verify-otp"
           element={<VerifyOtpPage />}
         />
-
+<Route
+  path="/google-callback"
+  element={<GoogleCallbackPage />}
+/>
         <Route
           path="/"
           element={
@@ -203,7 +210,18 @@ function App() {
             path="/profile"
             element={<ProfilePage />}
           />
-
+<Route
+  path="/training/setup"
+  element={<TrainingSetupPage />}
+/>
+<Route
+  path="/training"
+  element={<TrainingPage />}
+/>
+<Route
+  path="/training/device-check"
+  element={<TrainingDeviceCheckPage />}
+/>
           <Route
             path="/interview/setup"
             element={<InterviewSetupPage />}
