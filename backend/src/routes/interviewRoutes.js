@@ -1,18 +1,42 @@
 const r = require("express").Router();
 
-const interviewController = require("../controllers/interviewController");
-const answerController = require("../controllers/answerController");
-const uploadMiddleware = require("../middleware/uploadMiddleware");
+const interviewController =
+  require("../controllers/interviewController");
 
-r.get("/", interviewController.list);
+const answerController =
+  require("../controllers/answerController");
 
-r.post("/", interviewController.create);
+const uploadMiddleware =
+  require("../middleware/uploadMiddleware");
 
-r.get("/:id", interviewController.get);
+r.get(
+  "/",
+  interviewController.list
+);
+
+r.post(
+  "/",
+  interviewController.create
+);
+
+r.post(
+  "/:id/heartbeat",
+  interviewController.heartbeat
+);
+
+r.post(
+  "/:id/quit",
+  interviewController.quit
+);
 
 r.post(
   "/:id/finish",
   interviewController.finish
+);
+
+r.get(
+  "/:id",
+  interviewController.get
 );
 
 r.post(

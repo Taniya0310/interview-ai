@@ -1,30 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { X, BriefcaseBusiness } from "lucide-react";
 import PageLoader from "../components/PageLoader";
+import { authenticatedFetch } from "../services/authApi";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
 
-async function api(path) {
-  const response = await fetch(`${API}${path}`);
-
-  if (!response.ok) {
-    let message = "Request failed";
-
-    try {
-      const data = await response.json();
-      message = data.error || message;
-    } catch {}
-
-    throw new Error(message);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
+async function api(path, options = {}) {
+  return authenticatedFetch(path, options);
 }
 
 function getInterviewId(interview) {
@@ -60,12 +44,8 @@ function getScore(interview) {
 }
 
 function getRole(interview) {
-  return (
-    interview?.role ??
-    interview?.job_role ??
-    interview?.jobRole ??
-    "Interview"
-  );
+  return `Interview ${interview?.interview_number || ""
+    }`;
 }
 
 function getInterviewType(interview) {
@@ -179,9 +159,7 @@ function getScoreClass(score) {
 }
 
 function getStatusLabel(status) {
-  const normalized =
-    String(status || "")
-      .toLowerCase();
+  const normalized = String(status || "").toLowerCase();
 
   if (
     normalized === "completed" ||
@@ -205,6 +183,13 @@ function getStatusLabel(status) {
   }
 
   if (
+    normalized === "quit" ||
+    normalized === "quited"
+  ) {
+    return "Quit";
+  }
+
+  if (
     normalized === "cancelled" ||
     normalized === "canceled"
   ) {
@@ -213,7 +198,6 @@ function getStatusLabel(status) {
 
   return formatLabel(status);
 }
-
 export default function InterviewHistoryPage() {
   const navigate = useNavigate();
 
@@ -257,8 +241,8 @@ export default function InterviewHistoryPage() {
         const list = Array.isArray(data)
           ? data
           : Array.isArray(
-                data?.interviews
-              )
+            data?.interviews
+          )
             ? data.interviews
             : Array.isArray(data?.data)
               ? data.data
@@ -274,7 +258,7 @@ export default function InterviewHistoryPage() {
         if (mounted) {
           setError(
             err?.message ||
-              "Unable to load interview history."
+            "Unable to load interview history."
           );
         }
       } finally {
@@ -361,7 +345,7 @@ export default function InterviewHistoryPage() {
         ) {
           matchesFilter =
             status ===
-              "completed" ||
+            "completed" ||
             status === "finished";
         }
 
@@ -370,7 +354,7 @@ export default function InterviewHistoryPage() {
         ) {
           matchesFilter =
             status ===
-              "processing" ||
+            "processing" ||
             status === "analyzing";
         }
 
@@ -379,9 +363,9 @@ export default function InterviewHistoryPage() {
         ) {
           matchesFilter =
             status ===
-              "in_progress" ||
+            "in_progress" ||
             status ===
-              "in-progress";
+            "in-progress";
         }
 
         return (
@@ -419,13 +403,13 @@ export default function InterviewHistoryPage() {
   const averageScore =
     scoredInterviews.length
       ? Math.round(
-          scoredInterviews.reduce(
-            (sum, score) =>
-              sum + score,
-            0
-          ) /
-            scoredInterviews.length
-        )
+        scoredInterviews.reduce(
+          (sum, score) =>
+            sum + score,
+          0
+        ) /
+        scoredInterviews.length
+      )
       : null;
 
   return (
@@ -545,7 +529,7 @@ export default function InterviewHistoryPage() {
                 type="button"
                 className={
                   filter ===
-                  "completed"
+                    "completed"
                     ? "history-filter active"
                     : "history-filter"
                 }
@@ -562,7 +546,7 @@ export default function InterviewHistoryPage() {
                 type="button"
                 className={
                   filter ===
-                  "processing"
+                    "processing"
                     ? "history-filter active"
                     : "history-filter"
                 }
@@ -579,7 +563,7 @@ export default function InterviewHistoryPage() {
         )}
 
       {/* Loading */}
-     {loading && <PageLoader />}
+      {loading && <PageLoader />}
 
       {/* Error */}
       {!loading && error && (
@@ -649,7 +633,7 @@ export default function InterviewHistoryPage() {
         !error &&
         interviews.length > 0 &&
         filteredInterviews.length ===
-          0 && (
+        0 && (
           <section className="history-empty compact">
             <div className="empty-history-icon">
               ⌕
@@ -681,7 +665,7 @@ export default function InterviewHistoryPage() {
       {!loading &&
         !error &&
         filteredInterviews.length >
-          0 && (
+        0 && (
           <section className="history-list-section">
             <div className="section-heading">
               <div>
@@ -741,12 +725,10 @@ export default function InterviewHistoryPage() {
                     >
                       <div className="history-card-top">
                         <div className="history-card-icon">
-                          {String(
-                            index + 1
-                          ).padStart(
-                            2,
-                            "0"
-                          )}
+                          <BriefcaseBusiness
+                            size={22}
+                            strokeWidth={2}
+                          />
                         </div>
 
                         <div className="history-card-title">
@@ -766,14 +748,14 @@ export default function InterviewHistoryPage() {
                             {getTime(
                               interview
                             ) && (
-                              <>
-                                {" "}
-                                ·{" "}
-                                {getTime(
-                                  interview
-                                )}
-                              </>
-                            )}
+                                <>
+                                  {" "}
+                                  ·{" "}
+                                  {getTime(
+                                    interview
+                                  )}
+                                </>
+                              )}
                           </p>
                         </div>
 
@@ -806,7 +788,7 @@ export default function InterviewHistoryPage() {
                             `history-status ` +
                             (status ===
                               "completed" ||
-                            status ===
+                              status ===
                               "finished"
                               ? "completed"
                               : "")
@@ -820,39 +802,39 @@ export default function InterviewHistoryPage() {
 
                       {score !==
                         null && (
-                        <div className="history-score-row">
-                          <div>
-                            <span>
-                              Overall score
-                            </span>
+                          <div className="history-score-row">
+                            <div>
+                              <span>
+                                Overall score
+                              </span>
 
-                            <strong
-                              className={
-                                scoreClass
-                              }
-                            >
-                              {score}
-                              <small>
-                                /100
-                              </small>
-                            </strong>
-                          </div>
+                              <strong
+                                className={
+                                  scoreClass
+                                }
+                              >
+                                {score}
+                                <small>
+                                  /100
+                                </small>
+                              </strong>
+                            </div>
 
-                          <div className="history-score-bar">
-                            <span
-                              style={{
-                                width: `${Math.min(
-                                  Math.max(
-                                    score,
-                                    0
-                                  ),
-                                  100
-                                )}%`,
-                              }}
-                            />
+                            <div className="history-score-bar">
+                              <span
+                                style={{
+                                  width: `${Math.min(
+                                    Math.max(
+                                      score,
+                                      0
+                                    ),
+                                    100
+                                  )}%`,
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </button>
                   );
                 }

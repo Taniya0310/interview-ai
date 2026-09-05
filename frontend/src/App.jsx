@@ -5,15 +5,29 @@ import {
   Navigate,
   useNavigate,
   useParams,
-  useLocation,
+  useLocation
 } from "react-router-dom";
+import TrainingSetupPage
+  from "./pages/TrainingSetupPage";
 import { useEffect, useState } from "react";
+import "./styles/auth.css";
+import TrainingPage
+  from "./pages/TrainingPage";
+import {
+  AuthProvider,
+  useAuth
+} from "./context/AuthContext";
 
+import ProtectedRoute from "./components/ProtectedRoute";
 import GifSplashScreen from "./components/GifSplashScreen";
 import BottomNav from "./components/BottomNav";
 
 import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import VerifyOtpPage from "./pages/VerifyOtpPage";
 import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 import DeviceCheckPage from "./pages/DeviceCheckPage";
 import InterviewSetupPage from "./pages/InterviewSetupPage";
 import LiveInterviewPage from "./pages/LiveInterviewPage";
@@ -22,12 +36,14 @@ import ResultsPage from "./pages/ResultsPage";
 import AnswerDetailPage from "./pages/AnswerDetailPage";
 import InterviewHistoryPage from "./pages/InterviewHistoryPage";
 import SettingsPage from "./pages/SettingsPage";
-
+import TrainingDeviceCheckPage
+  from "./pages/TrainingDeviceCheckPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import QuestionsPage from "./pages/admin/QuestionsPage";
 import CreateQuestionPage from "./pages/admin/CreateQuestionPage";
 import EditQuestionPage from "./pages/admin/EditQuestionPage";
-
+import GoogleCallbackPage
+  from "./pages/GoogleCallbackPage";
 function AdminDashboardRoute() {
   const navigate = useNavigate();
 
@@ -63,7 +79,9 @@ function AdminCreateRoute() {
 
   return (
     <CreateQuestionPage
-      onBack={() => navigate("/admin/questions")}
+      onBack={() =>
+        navigate("/admin/questions")
+      }
       onCreated={() =>
         navigate("/admin/questions")
       }
@@ -78,7 +96,9 @@ function AdminEditRoute() {
   return (
     <EditQuestionPage
       questionId={id}
-      onBack={() => navigate("/admin/questions")}
+      onBack={() =>
+        navigate("/admin/questions")
+      }
       onUpdated={() =>
         navigate("/admin/questions")
       }
@@ -88,7 +108,15 @@ function AdminEditRoute() {
 
 function GlobalBottomNav() {
   const location = useLocation();
-  const hidden = location.pathname === "/" || location.pathname.startsWith("/admin") || location.pathname === "/interview/live";
+
+  const hidden =
+    location.pathname === "/" ||
+    location.pathname === "/login" ||
+    location.pathname === "/signup" ||
+    location.pathname === "/verify-otp" ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname === "/interview/live";
+
   return hidden ? null : <BottomNav />;
 }
 
@@ -96,22 +124,34 @@ function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant"
+    });
   }, [pathname]);
 
   return null;
 }
 
 function App() {
+  const { user } = useAuth();
+
   const [showSplash, setShowSplash] =
     useState(true);
 
   useEffect(() => {
-    const splashDuration = 3000;
+  if (!user || showSplash) {
+    return;
+  }
 
+  window.AndroidTTS?.startModelCheck?.();
+}, [user, showSplash]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, splashDuration);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -124,7 +164,26 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <GlobalBottomNav />
+
       <Routes>
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
+
+        <Route
+          path="/signup"
+          element={<SignupPage />}
+        />
+
+        <Route
+          path="/verify-otp"
+          element={<VerifyOtpPage />}
+        />
+<Route
+  path="/google-callback"
+  element={<GoogleCallbackPage />}
+/>
         <Route
           path="/"
           element={
@@ -141,50 +200,68 @@ function App() {
           }
         />
 
-        <Route
-          path="/dashboard"
-          element={<DashboardPage />}
-        />
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/dashboard"
+            element={<DashboardPage />}
+          />
 
-        <Route
-          path="/interview/setup"
-          element={<InterviewSetupPage />}
-        />
+          <Route
+            path="/profile"
+            element={<ProfilePage />}
+          />
+<Route
+  path="/training/setup"
+  element={<TrainingSetupPage />}
+/>
+<Route
+  path="/training"
+  element={<TrainingPage />}
+/>
+<Route
+  path="/training/device-check"
+  element={<TrainingDeviceCheckPage />}
+/>
+          <Route
+            path="/interview/setup"
+            element={<InterviewSetupPage />}
+          />
 
-        <Route
-          path="/interview/device-check"
-          element={<DeviceCheckPage />}
-        />
+          <Route
+            path="/interview/device-check"
+            element={<DeviceCheckPage />}
+          />
 
-        <Route
-          path="/interview/live"
-          element={<LiveInterviewPage />}
-        />
+          <Route
+            path="/interview/live"
+            element={<LiveInterviewPage />}
+          />
 
-        <Route
-          path="/interview/processing"
-          element={<ProcessingPage />}
-        />
+          <Route
+            path="/interview/processing"
+            element={<ProcessingPage />}
+          />
 
-        <Route
-          path="/interview/results"
-          element={<ResultsPage />}
-        />
+          <Route
+            path="/interview/results"
+            element={<ResultsPage />}
+          />
 
-        <Route
-          path="/interview/answer/:id"
-          element={<AnswerDetailPage />}
-        />
+          <Route
+            path="/interview/answer/:id"
+            element={<AnswerDetailPage />}
+          />
 
-        <Route
-          path="/interview/history"
-          element={<InterviewHistoryPage />}
-        />
+          <Route
+            path="/interview/history"
+            element={<InterviewHistoryPage />}
+          />
 
-        <Route
-          path="/settings"
-          element={<SettingsPage />}
-        />
+          <Route
+            path="/settings"
+            element={<SettingsPage />}
+          />
+        </Route>
 
         <Route
           path="/admin"
@@ -217,4 +294,10 @@ function App() {
   );
 }
 
-export default App;
+export default function AppWithAuth() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}

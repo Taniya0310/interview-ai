@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
+import PageLoader from "../components/PageLoader";
 import {
   ArrowRight,
   BarChart3,
@@ -13,21 +14,19 @@ import {
   Star,
   Sun,
 } from "lucide-react";
-
+import {
+  authenticatedFetch
+} from "../services/authApi";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
 
-async function api(path) {
-  const response = await fetch(`${API}${path}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to load dashboard");
-  }
-
-  return response.json();
+async function api(path, options = {}) {
+  return authenticatedFetch(
+    path,
+    options
+  );
 }
-
 export default function DashboardPage() {
   const navigate = useNavigate();
 
@@ -87,9 +86,13 @@ export default function DashboardPage() {
     navigate("/interview/history");
   }
 
-  function openSettings() {
-    navigate("/settings");
-  }
+  function openProfile() {
+  navigate("/profile");
+}
+
+function openSettings() {
+  navigate("/settings");
+}
 
   function getScore(interview) {
     return (
@@ -108,13 +111,11 @@ export default function DashboardPage() {
     );
   }
 
-  function getRole(interview) {
-    return (
-      interview?.role ||
-      interview?.job_role ||
-      "Interview"
-    );
-  }
+ function getRole(interview) {
+  return `Interview ${
+    interview?.interview_number || ""
+  }`;
+}
 
   function getDate(interview) {
     const date =
@@ -198,8 +199,8 @@ export default function DashboardPage() {
         <button
           type="button"
           className="profile-btn"
-          onClick={openSettings}
-          aria-label="Open settings"
+         onClick={openProfile}
+aria-label="Open profile"
         >
           <UserRoundCheck size={23} strokeWidth={1.8} />
         </button>

@@ -1,68 +1,27 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate
+} from "react-router-dom";
+
 import {
   History,
   Home,
   Mic,
   Settings,
+  GraduationCap
 } from "lucide-react";
-
-const navItems = [
-  {
-    label: "Home",
-    path: "/dashboard",
-    icon: Home,
-  },
-  {
-    label: "History",
-    path: "/interview/history",
-    icon: History,
-  },
-  {
-    label: "Results",
-    path: "/interview/results",
-    icon: Mic,
-  },
-  {
-    label: "Settings",
-    path: "/settings",
-    icon: Settings,
-  },
-];
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path) => {
-    if (path === "/dashboard") {
-      return location.pathname === "/dashboard";
-    }
-
-    if (path === "/interview/history") {
-      return location.pathname.startsWith(
-        "/interview/history"
-      );
-    }
-
-    if (path === "/interview/results") {
-      return location.pathname.startsWith(
-        "/interview/results"
-      );
-    }
-
-    if (path === "/settings") {
-      return location.pathname.startsWith(
-        "/settings"
-      );
-    }
-
-    return false;
+    return location.pathname.startsWith(path);
   };
 
   return (
     <nav className="app-bottom-nav">
       <div className="app-bottom-nav-inner">
-
         <button
           type="button"
           className={`bottom-nav-item ${
@@ -106,28 +65,33 @@ export default function BottomNav() {
           </span>
         </button>
 
-        {/* Center action */}
-
         <button
           type="button"
-          className="bottom-nav-create"
+          className={`bottom-nav-item ${
+            isActive("/training")
+              ? "active"
+              : ""
+          }`}
           onClick={() =>
-            navigate("/interview/setup")
+            navigate("/training/setup")
           }
-          aria-label="Start interview"
         >
-          <span className="bottom-nav-create-icon">
-            <Mic
-              size={24}
-              strokeWidth={2.1}
+          <span className="bottom-nav-icon">
+            <GraduationCap
+              size={19}
+              strokeWidth={1.9}
             />
+          </span>
+
+          <span className="bottom-nav-label">
+            Training
           </span>
         </button>
 
         <button
           type="button"
           className={`bottom-nav-item ${
-            location.pathname.startsWith("/interview/setup")
+            isActive("/interview")
               ? "active"
               : ""
           }`}
@@ -136,10 +100,7 @@ export default function BottomNav() {
           }
         >
           <span className="bottom-nav-icon">
-            <Mic
-              size={19}
-              strokeWidth={1.9}
-            />
+            <Mic size={19} strokeWidth={1.9} />
           </span>
 
           <span className="bottom-nav-label">
@@ -169,7 +130,6 @@ export default function BottomNav() {
             Settings
           </span>
         </button>
-
       </div>
     </nav>
   );

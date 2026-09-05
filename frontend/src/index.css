@@ -5682,202 +5682,414 @@ button {
 .settings-action{background:transparent!important;border:0!important;box-shadow:none!important;font-size:0!important;position:relative!important}.settings-action::before{content:"";display:block;width:9px;height:9px;border-top:2px solid #d9530b;border-right:2px solid #d9530b;transform:rotate(45deg);transition:transform .2s ease}.settings-action:hover::before{transform:translateX(3px) rotate(45deg)}
 .processing-visual{height:140px!important;margin:8px auto 10px!important}.processing-visual .page-loader,.processing-visual .page-loader-animation{min-height:130px!important;width:130px!important;height:130px!important}
 .processing-page .processing-visual{display:none!important;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
-
-/* Interview complete performance accents */
-.score-breakdown-header strong,
-.score-breakdown-header::after,
-.score-breakdown-item::before,
-.score-progress span,
-.results-header .eyebrow,
-.results-score-content .eyebrow {
-  color: #ff9b1c !important;
+.logout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 15, 25, 0.55);
 }
 
-.score-breakdown-item::before {
-  background: #fff4e8 !important;
+.logout-modal {
+  width: min(100%, 360px);
+  padding: 28px 22px 22px;
+  border-radius: 22px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
-.score-progress span {
-  background: #ff9b1c !important;
+.logout-modal-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #dc2626;
+  background: #fee2e2;
 }
 
-/* Results page bottom actions */
-.results-actions .primary-btn,
-.results-dashboard-btn {
-  background: #ff9b1c !important;
-  border-color: #ff9b1c !important;
+.logout-modal h2 {
+  margin: 0 0 8px;
+  color: #20202a;
 }
 
-.results-actions .secondary-btn {
-  border-color: #ff9b1c !important;
-  color: #ff9b1c !important;
+.logout-modal p {
+  margin: 0;
+  color: #6b7280;
 }
 
-.results-recommendations > div > span,
-.answer-recommendations b {
-  background: #ff9b1c !important;
+.logout-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
 }
 
-/* Orange accent standardization */
-.dashboard-hero h2 span,
-.landing-content .eyebrow,
-.landing-content h1 span,
-.feature-arrow,
-.landing-stats svg { color: #ff9b1c; }
-
-.dashboard-hero .primary-btn,
-.landing-btn,
-.app-bottom-nav .bottom-nav-create-icon,
-.nav-plus,
-.history-filter.active,
-.primary-btn,
-.admin-primary-button { background: #ff9b1c; }
-
-/* Question Bank theme alignment */
-.admin-eyebrow,
-.admin-action-link,
-.admin-edit-button,
-.admin-back-button:hover,
-.admin-stat-icon,
-.admin-action-icon,
-.admin-info-icon {
-  color: #ff9b1c !important;
+.logout-modal-actions button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.admin-stat-icon,
-.admin-action-icon,
-.admin-info-icon {
-  background: #fff4e8 !important;
+.logout-cancel-btn {
+  color: #374151;
+  background: #f3f4f6;
 }
 
-.admin-primary-button {
-  background: #ff9b1c !important;
-  border-color: #ff9b1c !important;
+.logout-confirm-btn {
+  color: #fff;
+  background: #dc2626;
 }
 
-.admin-back-button:hover {
-  border-color: #ff9b1c !important;
-  background: #fff4e8 !important;
+.page-loader {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.admin-stat-icon,
-.admin-action-icon,
-.admin-info-icon {
-  width: 48px !important;
-  height: 48px !important;
-  min-width: 48px !important;
-  display: inline-grid !important;
-  place-items: center !important;
+.page-loader-animation {
+  width: 80px !important;
+  height: 80px !important;
+  max-width: 80px;
+  max-height: 80px;
+}
+
+.dashboard-loading {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dashboard-loading .page-loader {
+  height: 80px;
+}
+
+.dashboard-loading .page-loader-animation {
+  width: 65px !important;
+  height: 65px !important;
+}
+
+.page-loader {
+  width: 100%;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.page-loader-animation {
+  width: 80px !important;
+  height: 80px !important;
+  max-width: 80px;
+  max-height: 80px;
+}
+
+.app-bottom-nav-inner {
+  grid-template-columns: repeat(5, 1fr) !important;
+}
+
+.app-bottom-nav .bottom-nav-item {
+  min-width: 0 !important;
+}
+
+@media (max-width: 650px) {
+  .app-bottom-nav-inner {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .app-bottom-nav .bottom-nav-label {
+    font-size: 10px !important;
+  }
+
+  .app-bottom-nav .bottom-nav-item {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+}
+.setup-meta-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 24px 0;
+  padding: 14px 10px;
+  border: 1px solid #ffd8bd;
+  border-radius: 12px;
+  background: #fffaf6;
+}
+
+.setup-meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-right: 1px solid #f1dfd2;
+}
+
+.setup-meta-item:last-child {
+  border-right: 0;
+}
+
+.setup-meta-icon {
+  color: #ff6b00;
+  font-size: 22px;
+}
+
+.setup-meta-item small {
+  color: #ff6b00;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.setup-meta-item strong {
+  color: #ff6b00;
+  font-size: 13px;
+}
+
+.setup-option-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.setup-option {
+  position: relative;
+  min-height: 175px;
+  padding: 20px 12px;
+  border: 1px solid #eeeeee;
+  border-radius: 10px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(60, 30, 10, 0.06);
+}
+
+.setup-option.active {
+  border-color: #ff8b4d;
+  background: #fffaf6;
+}
+
+.setup-option-content {
+  align-items: center;
+}
+
+.setup-option-content small {
+  margin-top: 12px;
+  line-height: 1.4;
+}
+/* Fix Interview Setup layout */
+.interview-setup-page {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow-x: hidden;
+}
+
+.setup-meta-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.setup-option-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100%;
+}
+
+.setup-option {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 175px !important;
+  padding: 18px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
   align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-  line-height: 1 !important;
-  font-size: 26px !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  box-sizing: border-box;
+}
+
+.setup-option-content {
+  width: 100% !important;
+  min-width: 0 !important;
   text-align: center !important;
-  vertical-align: middle !important;
+  overflow: hidden;
 }
 
-/* Page-specific orange and icon contrast fixes */
-.history-filter.active,
-.history-card::before,
-.history-card-arrow,
-.history-status,
-.history-bottom-cta .secondary-btn,
-.settings-bottom .secondary-btn { color: #ff9b1c !important; }
-
-.history-filter.active,
-.history-bottom-cta .secondary-btn,
-.settings-bottom .secondary-btn {
-  background: #ff9b1c !important;
-  color: #fff !important;
+.setup-option-content strong {
+  display: block;
+  font-size: 13px !important;
+  white-space: nowrap;
 }
 
-.settings-icon {
-  background: #fff4e8 !important;
-  color: #ff9b1c !important;
+.setup-option-content small {
+  display: block;
+  margin-top: 10px !important;
+  font-size: 10px !important;
+  line-height: 1.35 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
 }
 
-.settings-icon svg {
-  color: #ff9b1c !important;
-  stroke: #ff9b1c !important;
+.setup-option-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 
-/* Recent interview and history card accents */
-.recent-interview-card::before,
-.recent-interview-card .recent-icon,
-.recent-interview-card .status-text,
-.recent-interview-card .recent-arrow,
-.history-card::before,
-.history-card-icon,
-.history-card-arrow,
-.history-status,
-.history-tag {
-  color: #ff9b1c !important;
+@media (max-width: 420px) {
+  .setup-option-grid {
+    grid-template-columns: repeat(3, minmax(105px, 1fr)) !important;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .setup-option {
+    min-height: 185px !important;
+  }
+
+  .setup-option-content strong {
+    font-size: 12px !important;
+  }
+
+  .setup-option-content small {
+    font-size: 9px !important;
+  }
+}
+/* FINAL INTERVIEW SETUP RESPONSIVE FIX */
+.interview-setup-page {
+  width: 100% !important;
+  max-width: 920px !important;
+  margin: 0 auto !important;
+  overflow-x: hidden !important;
 }
 
-.recent-interview-card::before,
-.history-card::before {
-  background: #ff9b1c !important;
+.interview-setup-page .setup-option-grid {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  overflow: visible !important;
 }
 
-.recent-interview-card .recent-icon,
-.history-card-icon,
-.history-tag,
-.history-status {
-  background: #fff4e8 !important;
+.interview-setup-page .setup-option {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 175px !important;
+  padding: 14px 6px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 9px !important;
+
+  text-align: center !important;
+  overflow: hidden !important;
 }
 
-.history-status.completed {
-  background: #e9f8e9 !important;
-  color: #168a2d !important;
+.interview-setup-page .setup-option-icon {
+  width: 38px !important;
+  height: 38px !important;
+  flex: 0 0 auto !important;
 }
 
-.recent-interview-card .recent-icon {
-  background: transparent !important;
+.interview-setup-page .setup-option-content {
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  text-align: center !important;
+  overflow: hidden !important;
 }
 
-/* First page and compact bottom navigation */
-.landing-content .eyebrow,
-.landing-content h1 span,
-.landing-rule {
-  color: #ff9b1c !important;
+.interview-setup-page .setup-option-content strong {
+  display: block !important;
+  width: 100% !important;
+  font-size: clamp(10px, 3vw, 14px) !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
 }
 
-.landing-btn,
-.landing-rule,
-.landing-mic,
-.feature-icon {
-  background: #ff9b1c !important;
+.interview-setup-page .setup-option-content small {
+  display: block !important;
+  width: 100% !important;
+  margin-top: 9px !important;
+  font-size: clamp(7px, 2.3vw, 11px) !important;
+  line-height: 1.3 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
 }
 
-.landing-btn,
-.landing-mic,
-.feature-icon {
-  color: #fff !important;
+.interview-setup-page .setup-option-check {
+  position: absolute !important;
+  top: 8px !important;
+  right: 7px !important;
+  width: 17px !important;
+  height: 17px !important;
+  min-height: 17px !important;
+  font-size: 9px !important;
 }
 
-.bottom-nav,
-.app-bottom-nav {
-  padding: 6px !important;
+.interview-setup-page .setup-meta-card {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
 
-.bottom-nav .bottom-nav-item,
-.app-bottom-nav .bottom-nav-item,
-.bottom-nav .bottom-nav-create,
-.app-bottom-nav .bottom-nav-create {
-  min-height: 56px !important;
+@media (max-width: 360px) {
+  .interview-setup-page {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .interview-setup-page .setup-option-grid {
+    gap: 5px !important;
+  }
+
+  .interview-setup-page .setup-option {
+    min-height: 165px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .interview-setup-page .setup-option-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .interview-setup-page .setup-option-content small {
+    font-size: 7px !important;
+  }
+}
+.setup-meta-icon,
+.setup-option-icon {
+  display: grid;
+  place-items: center;
 }
 
-.bottom-nav .nav-plus,
-.app-bottom-nav .bottom-nav-create-icon {
-  width: 58px !important;
-  height: 58px !important;
-  margin-top: -14px !important;
-  background: #ff9b1c !important;
+.nav-plus {
+  display: grid;
+  place-items: center;
 }
 
-.bottom-nav .bottom-nav-item.active,
-.app-bottom-nav .bottom-nav-item.active {
-  background: #ff9b1c !important;
-  color: #fff !important;
+.nav-plus::before {
+  content: none !important;
 }

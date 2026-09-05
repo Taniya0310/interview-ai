@@ -5,11 +5,21 @@
 
 # Dependencies
 node_modules/
-
+downloads/
+sherpa-onnx/
+android/app/src/main/jniLibs/
 # Runtime-generated uploads and media
 backend/uploads/
 uploads/
-
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+build/
+*.log
+.idea/
+*.iml
 # Logs and local runtime files
 *.log
 logs/

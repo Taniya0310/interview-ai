@@ -1,0 +1,628 @@
+.training-page {
+  min-height: 100dvh;
+  padding: 24px 16px 160px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 152, 0, 0.2),
+      transparent 36%
+    ),
+    linear-gradient(135deg, #fff7ed, #ffffff 55%, #ffedd5);
+}
+
+.training-card {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 28px;
+  box-sizing: border-box;
+  border: 1px solid #fed7aa;
+  border-radius: 26px;
+  background: #ffffff;
+  box-shadow: 0 18px 60px rgba(124, 45, 18, 0.14);
+}
+
+.training-back {
+  padding: 0;
+  border: 0;
+  color: #c2410c;
+  background: transparent;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.training-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.training-heading-row h1 {
+  margin: 4px 0 0;
+  color: #111827;
+  font-size: clamp(28px, 6vw, 40px);
+  line-height: 1.1;
+}
+
+.training-progress {
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: #c2410c;
+  background: #ffedd5;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.training-progress-bar {
+  height: 8px;
+  margin: 22px 0;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #fed7aa;
+}
+
+.training-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #fb923c, #f97316);
+  transition: width 0.25s ease;
+}
+
+.training-question-card,
+.training-record-card {
+  padding: 22px;
+  border-radius: 20px;
+}
+
+.training-question-card {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+}
+
+.training-record-card {
+  margin-top: 16px;
+  text-align: center;
+  background: #fffaf5;
+  box-shadow: inset 0 0 0 1px #fef3c7;
+}
+
+.training-label {
+  margin: 0 0 10px;
+  color: #ea580c;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.training-question-card h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: clamp(21px, 4vw, 28px);
+  line-height: 1.3;
+}
+
+.training-question-card p,
+.training-record-card p {
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.training-mic {
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  margin: 12px auto 16px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: linear-gradient(145deg, #fb923c, #ea580c);
+  box-shadow: 0 12px 28px rgba(234, 88, 12, 0.25);
+}
+
+.training-mic.recording {
+  animation: training-pulse 1.4s infinite;
+}
+
+@keyframes training-pulse {
+  50% {
+    box-shadow:
+      0 0 0 14px rgba(249, 115, 22, 0.15),
+      0 12px 28px rgba(234, 88, 12, 0.25);
+  }
+}
+
+.training-record-card h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 21px;
+}
+
+.training-timer {
+  margin: 14px 0;
+  color: #c2410c;
+  font-size: 30px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.training-waveform {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 18px;
+}
+
+.training-waveform span {
+  width: 6px;
+  border-radius: 99px;
+  background: #fed7aa;
+}
+
+.training-waveform span.active {
+  background: #f97316;
+}
+
+.training-speak-button,
+.training-record-button,
+.training-stop-button,
+.training-submit-button {
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 13px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.training-speak-button {
+  color: #c2410c;
+  background: #ffffff;
+  border: 1px solid #fdba74;
+}
+
+.training-record-button,
+.training-submit-button {
+  color: #ffffff;
+  background: #f97316;
+}
+
+.training-stop-button {
+  color: #ffffff;
+  background: #dc2626;
+}
+
+.training-submit-button {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.training-submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.training-skip-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: 0;
+  color: #c2410c;
+  background: transparent;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.training-error,
+.training-success {
+  margin-top: 16px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.training-error {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.training-success {
+  color: #166534;
+  background: #f0fdf4;
+}
+
+@media (max-width: 650px) {
+  .training-page {
+    padding: 16px 12px
+      calc(160px + env(safe-area-inset-bottom));
+  }
+
+  .training-card {
+    padding: 20px 16px;
+    border-radius: 21px;
+  }
+
+  .training-heading-row {
+    margin-top: 20px;
+  }
+
+  .training-question-card,
+  .training-record-card {
+    padding: 18px 15px;
+  }
+
+  .training-speak-button,
+  .training-record-button,
+  .training-stop-button {
+    width: 100%;
+  }
+
+  .training-progress {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+}
+.training-device-card {
+  text-align: center;
+}
+
+.training-device-header {
+  margin-top: 28px;
+}
+
+.training-device-header h1 {
+  margin: 6px 0 10px;
+  color: #111827;
+  font-size: clamp(28px, 6vw, 40px);
+}
+
+.training-device-header p:not(.eyebrow) {
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.training-device-icon {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  margin: 32px auto 18px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: linear-gradient(145deg, #fb923c, #ea580c);
+  box-shadow: 0 14px 30px rgba(234, 88, 12, 0.25);
+}
+
+.training-device-icon.ready {
+  background: linear-gradient(145deg, #22c55e, #15803d);
+}
+
+.training-device-icon.error {
+  background: linear-gradient(145deg, #ef4444, #b91c1c);
+}
+
+.training-device-icon.checking {
+  animation: training-pulse 1.4s infinite;
+}
+
+.training-device-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.status-dot.ready {
+  background: #16a34a;
+}
+
+.status-dot.error {
+  background: #dc2626;
+}
+
+.training-device-help {
+  max-width: 430px;
+  margin: 18px auto 24px;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.training-check-again {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+@media (max-width: 650px) {
+  .training-device-card {
+    padding: 20px 16px;
+  }
+
+  .training-device-icon {
+    width: 96px;
+    height: 96px;
+    margin-top: 26px;
+  }
+}
+
+.training-card > h1 {
+  margin: 8px 0 10px;
+  color: #111827;
+  font-size: clamp(30px, 7vw, 42px);
+  line-height: 1.1;
+}
+
+.training-card > p:not(.eyebrow) {
+  margin: 0 0 24px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.training-card > label {
+  display: block;
+  margin: 18px 0 8px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.training-card > select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 15px;
+  box-sizing: border-box;
+  border: 2px solid #fdba74;
+  border-radius: 13px;
+  color: #7c2d12;
+  background: #fff7ed;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.training-card > select:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+}
+
+.training-card > select option {
+  color: #7c2d12;
+  background: #ffffff;
+}
+
+.training-setup-info {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #fed7aa;
+  border-radius: 15px;
+  background: #fffaf5;
+}
+
+.training-setup-info strong {
+  color: #c2410c;
+  font-size: 15px;
+}
+
+.training-setup-info p {
+  margin: 7px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.training-start-button {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 13px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(234, 88, 12, 0.2);
+}
+
+.training-start-button:hover {
+  background: linear-gradient(135deg, #f97316, #c2410c);
+}
+
+.training-start-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 650px) {
+  .training-card > select {
+    min-height: 50px;
+    font-size: 16px;
+  }
+
+  .training-setup-info {
+    padding: 14px;
+  }
+
+  .training-start-button {
+    min-height: 50px;
+  }
+}
+/* Responsive training layout */
+.training-page {
+  width: 100%;
+  min-height: 100dvh;
+  padding: 20px 16px
+    calc(170px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.training-card {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto 30px;
+  box-sizing: border-box;
+}
+
+.training-question-card,
+.training-record-card {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
+.training-question-card h2 {
+  font-size: clamp(20px, 5vw, 28px);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.training-waveform {
+  width: 100%;
+  overflow: hidden;
+}
+
+.training-waveform span {
+  flex: 0 0 6px;
+}
+
+.training-speak-button,
+.training-record-button,
+.training-stop-button,
+.training-submit-button,
+.training-skip-button {
+  touch-action: manipulation;
+}
+
+@media (max-width: 650px) {
+  .training-page {
+    display: block;
+    min-height: 100dvh;
+    padding: 14px 10px
+      calc(170px + env(safe-area-inset-bottom));
+  }
+
+  .training-card {
+    max-width: none;
+    margin: 0 auto 24px;
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+
+  .training-heading-row {
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .training-heading-row h1 {
+    font-size: 29px;
+    line-height: 1.15;
+  }
+
+  .training-progress {
+    padding: 7px 9px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .training-progress-bar {
+    height: 7px;
+    margin: 18px 0;
+  }
+
+  .training-question-card,
+  .training-record-card {
+    padding: 17px 14px;
+    border-radius: 17px;
+  }
+
+  .training-question-card h2 {
+    font-size: 21px;
+  }
+
+  .training-mic {
+    width: 76px;
+    height: 76px;
+  }
+
+  .training-record-card h3 {
+    font-size: 19px;
+  }
+
+  .training-timer {
+    font-size: 27px;
+  }
+
+  .training-speak-button,
+  .training-record-button,
+  .training-stop-button,
+  .training-submit-button {
+    width: 100%;
+    min-height: 50px;
+    font-size: 15px;
+  }
+
+  .training-skip-button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .training-page {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .training-card {
+    padding: 16px 12px;
+  }
+
+  .training-heading-row h1 {
+    font-size: 25px;
+  }
+
+  .training-question-card h2 {
+    font-size: 19px;
+  }
+
+  .training-waveform {
+    gap: 4px;
+  }
+
+  .training-waveform span {
+    flex-basis: 5px;
+    width: 5px;
+  }
+}
+.training-mic.recording {
+  animation: training-pulse 1.4s infinite;
+}

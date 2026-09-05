@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="28dp"
+    android:background="@drawable/dialog_background">
+
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Preparing Skillzage AI"
+        android:textSize="21sp"
+        android:textStyle="bold"
+        android:textColor="@color/dialog_text" />
+
+    <TextView
+        android:id="@+id/dialogStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Checking Assets..."
+        android:textSize="15sp"
+        android:textColor="@color/dialog_text" />
+
+    <ProgressBar
+        android:id="@+id/downloadProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="24dp"
+        android:max="100"
+        android:progress="0"
+        android:progressDrawable="@drawable/progress_orange" />
+
+    <TextView
+        android:id="@+id/progressText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="0%"
+        android:textSize="14sp"
+        android:textColor="@color/dialog_text" />
+<ImageView
+    android:id="@+id/successTick"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:layout_gravity="center_horizontal"
+    android:layout_marginTop="16dp"
+    android:src="@drawable/ic_check_green"
+    android:contentDescription="Voice assets ready"
+    android:visibility="gone" />
+</LinearLayout>
