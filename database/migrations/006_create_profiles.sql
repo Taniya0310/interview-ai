@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS profiles (
 
     phone_number VARCHAR(30),
 
+    institution_company VARCHAR(150),
+
     created_at TIMESTAMPTZ NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
