@@ -10,17 +10,43 @@ import {
 import "../styles/profile.css";
 
 const occupationOptions = [
+  { value: "student", label: "Student" },
+  { value: "professional", label: "Professional" },
+  { value: "teacher", label: "Teacher" }
+];
+
+const domainOptions = [
   {
-    value: "student",
-    label: "Student"
+    value: "software_developer",
+    label: "Software Developer"
   },
   {
-    value: "professional",
-    label: "Professional"
+    value: "data_science",
+    label: "Data Science"
   },
   {
-    value: "teacher",
-    label: "Teacher"
+    value: "ai_ml",
+    label: "AI / Machine Learning"
+  },
+  {
+    value: "cybersecurity",
+    label: "Cybersecurity"
+  },
+  {
+    value: "cloud_devops",
+    label: "Cloud / DevOps"
+  },
+  {
+    value: "testing_qa",
+    label: "Testing / QA"
+  },
+  {
+    value: "database",
+    label: "Database"
+  },
+  {
+    value: "networking",
+    label: "Networking"
   }
 ];
 
@@ -31,11 +57,13 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [occupation, setOccupation] = useState("");
+  const [domain, setDomain] = useState("");
   const [institutionCompany, setInstitutionCompany] =
     useState("");
 
   const [occupationOpen, setOccupationOpen] =
     useState(false);
+  const [domainOpen, setDomainOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,6 +78,7 @@ export default function ProfilePage() {
         setFullName(profile.full_name || "");
         setPhoneNumber(profile.phone_number || "");
         setOccupation(profile.occupation || "");
+        setDomain(profile.domain || "");
         setInstitutionCompany(
           profile.institution_company || ""
         );
@@ -75,6 +104,7 @@ export default function ProfilePage() {
     const cleanFullName = fullName.trim();
     const cleanPhoneNumber = phoneNumber.trim();
     const cleanOccupation = occupation.trim();
+    const cleanDomain = domain.trim();
     const cleanInstitutionCompany =
       institutionCompany.trim();
 
@@ -85,6 +115,11 @@ export default function ProfilePage() {
 
     if (!cleanOccupation) {
       setError("Please select your occupation.");
+      return;
+    }
+
+    if (!cleanDomain) {
+      setError("Please select your technical domain.");
       return;
     }
 
@@ -103,6 +138,7 @@ export default function ProfilePage() {
           fullName: cleanFullName,
           phoneNumber: cleanPhoneNumber,
           occupation: cleanOccupation,
+          domain: cleanDomain,
           institutionCompany:
             cleanInstitutionCompany
         });
@@ -114,6 +150,7 @@ export default function ProfilePage() {
       setOccupation(
         updatedProfile.occupation || ""
       );
+      setDomain(updatedProfile.domain || "");
       setInstitutionCompany(
         updatedProfile.institution_company || ""
       );
@@ -133,6 +170,11 @@ export default function ProfilePage() {
     occupationOptions.find(
       (option) => option.value === occupation
     )?.label || "Select occupation";
+
+  const selectedDomain =
+    domainOptions.find(
+      (option) => option.value === domain
+    )?.label || "Select technical domain";
 
   if (loading) {
     return (
@@ -162,7 +204,9 @@ export default function ProfilePage() {
         <p>Manage your personal information.</p>
 
         <form onSubmit={handleSave}>
-          <label htmlFor="fullName">Full name</label>
+          <label htmlFor="fullName">
+            Full name
+          </label>
 
           <input
             id="fullName"
@@ -213,7 +257,7 @@ export default function ProfilePage() {
               disabled={saving}
               onClick={() =>
                 setOccupationOpen(
-                  !occupationOpen
+                  (open) => !open
                 )
               }
             >
@@ -224,40 +268,96 @@ export default function ProfilePage() {
               </span>
             </button>
 
-           {occupationOpen && (
-  <div className="custom-select-menu">
-    {occupationOptions.map((option) => {
-      const isSelected =
-        occupation === option.value;
+            {occupationOpen && (
+              <div className="custom-select-menu">
+                {occupationOptions.map((option) => {
+                  const isSelected =
+                    occupation === option.value;
 
-      return (
-        <button
-          type="button"
-          key={option.value}
-          className="custom-select-option"
-          onClick={() => {
-            setOccupation(option.value);
-            setOccupationOpen(false);
-          }}
-        >
-          <span
-            className={
-              isSelected
-                ? "occupation-radio selected"
-                : "occupation-radio"
-            }
-          >
-            {isSelected && (
-              <span className="occupation-radio-dot" />
+                  return (
+                    <button
+                      type="button"
+                      key={option.value}
+                      className="custom-select-option"
+                      onClick={() => {
+                        setOccupation(option.value);
+                        setOccupationOpen(false);
+                      }}
+                    >
+                      <span
+                        className={
+                          isSelected
+                            ? "occupation-radio selected"
+                            : "occupation-radio"
+                        }
+                      >
+                        {isSelected && (
+                          <span className="occupation-radio-dot" />
+                        )}
+                      </span>
+
+                      <span>{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             )}
-          </span>
+          </div>
 
-          <span>{option.label}</span>
-        </button>
-      );
-    })}
-  </div>
-)}
+          <label htmlFor="domain">
+            Technical domain
+          </label>
+
+          <div className="custom-select">
+            <button
+              type="button"
+              className="custom-select-button"
+              disabled={saving}
+              onClick={() =>
+                setDomainOpen((open) => !open)
+              }
+            >
+              <span>{selectedDomain}</span>
+
+              <span className="custom-select-arrow">
+                {domainOpen ? "▲" : "▼"}
+              </span>
+            </button>
+
+            {domainOpen && (
+              <div className="custom-select-menu">
+                {domainOptions.map((option) => {
+                  const isSelected =
+                    domain === option.value;
+
+                  return (
+                    <button
+                      type="button"
+                      key={option.value}
+                      className="custom-select-option"
+                      onClick={() => {
+                        setDomain(option.value);
+                        setDomainOpen(false);
+                      }}
+                    >
+                      <span
+                        className={
+                          isSelected
+                            ? "occupation-radio selected"
+                            : "occupation-radio"
+                        }
+                      >
+                        {isSelected && (
+                          <span className="occupation-radio-dot" />
+                        )}
+                      </span>
+
+                      <span>{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <label htmlFor="institutionCompany">

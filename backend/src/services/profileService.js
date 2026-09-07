@@ -1,23 +1,28 @@
 const profileModel =
   require("../models/profileModel");
 
+const allowedDomains = [
+  "software_developer",
+  "data_science",
+  "ai_ml",
+  "cybersecurity",
+  "cloud_devops",
+  "testing_qa",
+  "database",
+  "networking"
+];
+
 async function getProfile(userId) {
   if (!userId) {
-    throw new Error(
-      "User ID is required"
-    );
+    throw new Error("User ID is required");
   }
 
   let profile =
-    await profileModel.findProfileByUserId(
-      userId
-    );
+    await profileModel.findProfileByUserId(userId);
 
   if (!profile) {
     profile =
-      await profileModel.createProfile(
-        userId
-      );
+      await profileModel.createProfile(userId);
   }
 
   return profile;
@@ -25,12 +30,10 @@ async function getProfile(userId) {
 
 async function updateProfile(
   userId,
-  profileData
+  profileData = {}
 ) {
   if (!userId) {
-    throw new Error(
-      "User ID is required"
-    );
+    throw new Error("User ID is required");
   }
 
   const fullName =
@@ -46,6 +49,11 @@ async function updateProfile(
   const occupation =
     typeof profileData.occupation === "string"
       ? profileData.occupation.trim().toLowerCase()
+      : "";
+
+  const domain =
+    typeof profileData.domain === "string"
+      ? profileData.domain.trim().toLowerCase()
       : "";
 
   const institutionCompany =
@@ -73,9 +81,14 @@ async function updateProfile(
       "teacher"
     ].includes(occupation)
   ) {
-    throw new Error(
-      "Invalid occupation"
-    );
+    throw new Error("Invalid occupation");
+  }
+
+  if (
+    domain &&
+    !allowedDomains.includes(domain)
+  ) {
+    throw new Error("Invalid technical domain");
   }
 
   if (institutionCompany.length > 150) {
@@ -89,6 +102,7 @@ async function updateProfile(
     fullName,
     phoneNumber,
     occupation,
+    domain,
     institutionCompany
   );
 }

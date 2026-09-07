@@ -5,6 +5,11 @@ async function createInterview(data, userId) {
     data.interviewType || ""
   ).trim();
 
+  const domain =
+    interviewType === "technical"
+      ? String(data.domain || "").trim().toLowerCase()
+      : null;
+
   if (!userId) {
     throw Object.assign(
       new Error("Authenticated user is required"),
@@ -13,10 +18,10 @@ async function createInterview(data, userId) {
   }
 
   const allowedTypes = [
-  "technical",
-  "non-technical",
-  "mixed",
-];
+    "technical",
+    "non-technical",
+    "mixed"
+  ];
 
   if (!allowedTypes.includes(interviewType)) {
     throw Object.assign(
@@ -27,60 +32,71 @@ async function createInterview(data, userId) {
     );
   }
 
-  const client =
-    await db.pool.connect();
+  if (interviewType === "technical" && !domain) {
+    throw Object.assign(
+      new Error(
+        "Technical domain is required for technical interviews"
+      ),
+      { status: 400 }
+    );
+  }
+
+  const client = await db.pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    const interviewResult =
-      await client.query(
-        `
-          INSERT INTO interviews (
-  user_id,
-  interview_type,
-  status,
-  last_seen_at
-)
-VALUES (
-  $1,
-  $2,
-  'in_progress',
-  CURRENT_TIMESTAMP
-)
-          RETURNING *
-        `,
-        [userId, interviewType]
-      );
+    const interviewResult = await client.query(
+      `
+        INSERT INTO interviews (
+          user_id,
+          interview_type,
+          status,
+          last_seen_at
+        )
+        VALUES (
+          $1,
+          $2,
+          'in_progress',
+          CURRENT_TIMESTAMP
+        )
+        RETURNING *
+      `,
+      [userId, interviewType]
+    );
 
-    const interview =
-      interviewResult.rows[0];
+    const interview = interviewResult.rows[0];
 
-   const questionResult =
-  await client.query(
-    `
-      SELECT *
-      FROM questions
-      WHERE is_active = TRUE
-        AND (
-          interview_type = $1
-          OR (
-            $1 = 'mixed'
-            AND interview_type IN (
-              'technical',
-              'non-technical'
+    const questionResult = await client.query(
+      `
+        SELECT *
+        FROM questions
+        WHERE is_active = TRUE
+          AND (
+            interview_type = $1
+            OR (
+              $1 = 'mixed'
+              AND interview_type IN (
+                'technical',
+                'non-technical'
+              )
             )
           )
-        )
-      ORDER BY created_at ASC
-    `,
-    [interviewType]
-  );
+          AND (
+            $1 <> 'technical'
+            OR domain = $2
+          )
+        ORDER BY created_at ASC
+      `,
+      [interviewType, domain]
+    );
 
     if (questionResult.rows.length === 0) {
       throw Object.assign(
         new Error(
-          `No active ${interviewType} questions are available`
+          `No active ${interviewType} questions are available${
+            domain ? ` for domain ${domain}` : ""
+          }`
         ),
         { status: 400 }
       );
@@ -108,22 +124,21 @@ VALUES (
       );
     }
 
-    const selectedQuestions =
-      await client.query(
-        `
-          SELECT
-            iq.id AS interview_question_id,
-            iq.position,
-            iq.follow_up_count,
-            q.*
-          FROM interview_questions iq
-          JOIN questions q
-            ON q.id = iq.question_id
-          WHERE iq.interview_id = $1
-          ORDER BY iq.position
-        `,
-        [interview.id]
-      );
+    const selectedQuestions = await client.query(
+      `
+        SELECT
+          iq.id AS interview_question_id,
+          iq.position,
+          iq.follow_up_count,
+          q.*
+        FROM interview_questions iq
+        JOIN questions q
+          ON q.id = iq.question_id
+        WHERE iq.interview_id = $1
+        ORDER BY iq.position
+      `,
+      [interview.id]
+    );
 
     await client.query("COMMIT");
 

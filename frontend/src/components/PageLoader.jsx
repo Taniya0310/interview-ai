@@ -1,6 +1,3 @@
-import { Lottie } from "lottie-react";
-import loadingAnimation from "../../assets/loading.json";
-
 export default function PageLoader() {
   return (
     <div
@@ -8,12 +5,7 @@ export default function PageLoader() {
       role="status"
       aria-label="Loading"
     >
-      <Lottie
-        animationData={loadingAnimation}
-        loop
-        autoplay
-        className="page-loader-animation"
-      />
+      <div className="page-loader-spinner" />
     </div>
   );
 }

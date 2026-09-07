@@ -60,7 +60,7 @@ setTimeout(() => {
 
         <div className="page-header">
           <div className="eyebrow">
-            INTERVIEW AI
+            SKILLZAGE AI
           </div>
 
           <h1>Settings</h1>
@@ -239,7 +239,7 @@ setTimeout(() => {
         SHARE
       </span>
 
-      <h2>Share Interview AI</h2>
+      <h2>Share Skillzage AI</h2>
     </div>
   </div>
 
@@ -253,7 +253,7 @@ setTimeout(() => {
         <h3>Share the app</h3>
 
         <p>
-          Send the Interview AI APK to someone
+          Send the Skillzage AI APK to someone
           through WhatsApp or another app.
         </p>
       </div>
@@ -320,7 +320,7 @@ setTimeout(() => {
         <h3>Log out</h3>
 
         <p>
-          Sign out of your Interview AI account
+          Sign out of your Skillzage AI account
           on this device.
         </p>
       </div>
@@ -344,7 +344,7 @@ setTimeout(() => {
               ABOUT
             </span>
 
-            <h2>Interview AI</h2>
+            <h2>Skillzage AI</h2>
           </div>
         </div>
 
