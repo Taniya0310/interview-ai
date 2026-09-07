@@ -154,7 +154,7 @@ public void onCompleted() {
             @Override
             public void onError(Exception error) {
                 updateDownloadDialog(
-                        "Download failed. Please restart the app."
+                        "Poor internet connection. Check your network and restart the app."
                 );
             }
         }

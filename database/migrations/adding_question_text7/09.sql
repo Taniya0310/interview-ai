@@ -1,0 +1,2 @@
+ALTER TABLE answers
+ADD COLUMN IF NOT EXISTS question_text TEXT;

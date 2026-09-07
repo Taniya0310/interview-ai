@@ -7,11 +7,13 @@ async function createAnswer({
   interviewQuestionId,
   file,
   parentAnswerId,
+  questionText,
 }) {
   logger.info("Answer upload received", {
     interviewId,
     interviewQuestionId,
     parentAnswerId,
+    questionText,
     path: file?.path,
     mimeType: file?.mimetype,
     size: file?.size,
@@ -35,7 +37,9 @@ async function createAnswer({
     );
 
     throw Object.assign(
-      new Error("Question does not belong to this interview"),
+      new Error(
+        "Question does not belong to this interview"
+      ),
       { status: 404 }
     );
   }
@@ -49,9 +53,10 @@ async function createAnswer({
         mime_type,
         status,
         is_follow_up,
-        parent_answer_id
+        parent_answer_id,
+        question_text
       )
-     VALUES ($1, $2, $3, $4, 'pending', $5, $6)
+     VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7)
      RETURNING *`,
     [
       interviewId,
@@ -60,6 +65,7 @@ async function createAnswer({
       file.mimetype || "video/webm",
       Boolean(parentAnswerId),
       parentAnswerId || null,
+      questionText || null,
     ]
   );
 
@@ -72,10 +78,6 @@ async function createAnswer({
     }
   );
 
-  /*
-   * The API returns immediately.
-   * Audio/transcript processing runs in the background.
-   */
   analysisService
     .processFastAnswer(answer.id)
     .catch((error) => {

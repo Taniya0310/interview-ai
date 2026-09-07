@@ -1108,7 +1108,17 @@ async function quitInterview() {
           currentQuestion
             .interview_question_id
         );
+const questionText =
+  parentAnswerIdRef.current
+    ? prompt
+    : currentQuestionRef.current?.text ||
+      prompt ||
+      "";
 
+formData.append(
+  "questionText",
+  questionText
+);
         if (
           parentAnswerIdRef.current
         ) {

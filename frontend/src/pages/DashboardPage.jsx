@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [dayStreak, setDayStreak] = useState(0);
   useEffect(() => {
     let mounted = true;
 
@@ -46,8 +46,12 @@ export default function DashboardPage() {
           "/interviews"
         );
 
-        if (!mounted) return;
 
+        const streakData = await api(
+          "/interviews/streak"
+        );
+        if (!mounted) return;
+        setDayStreak(streakData?.streak || 0);
         const interviews = Array.isArray(
           data
         )
@@ -87,12 +91,12 @@ export default function DashboardPage() {
   }
 
   function openProfile() {
-  navigate("/profile");
-}
+    navigate("/profile");
+  }
 
-function openSettings() {
-  navigate("/settings");
-}
+  function openSettings() {
+    navigate("/settings");
+  }
 
   function getScore(interview) {
     return (
@@ -111,11 +115,10 @@ function openSettings() {
     );
   }
 
- function getRole(interview) {
-  return `Interview ${
-    interview?.interview_number || ""
-  }`;
-}
+  function getRole(interview) {
+    return `Interview ${interview?.interview_number || ""
+      }`;
+  }
 
   function getDate(interview) {
     const date =
@@ -147,9 +150,9 @@ function openSettings() {
     history.filter(
       (item) =>
         getStatus(item) ===
-          "completed" ||
+        "completed" ||
         getStatus(item) ===
-          "finished"
+        "finished"
     );
 
   const scores =
@@ -166,12 +169,12 @@ function openSettings() {
   const averageScore =
     scores.length > 0
       ? Math.round(
-          scores.reduce(
-            (sum, score) =>
-              sum + score,
-            0
-          ) / scores.length
-        )
+        scores.reduce(
+          (sum, score) =>
+            sum + score,
+          0
+        ) / scores.length
+      )
       : 0;
 
   const recent =
@@ -183,7 +186,7 @@ function openSettings() {
       <header className="dashboard-header">
         <div>
           <div className="eyebrow">
-            INTERVIEW AI
+            SKILLZAGE AI
           </div>
 
           <h1>
@@ -199,8 +202,8 @@ function openSettings() {
         <button
           type="button"
           className="profile-btn"
-         onClick={openProfile}
-aria-label="Open profile"
+          onClick={openProfile}
+          aria-label="Open profile"
         >
           <UserRoundCheck size={23} strokeWidth={1.8} />
         </button>
@@ -276,7 +279,7 @@ aria-label="Open profile"
         <div className="stat-card">
           <div className="stat-icon stat-icon-green"><BarChart3 size={22} /></div>
           <span>Day Streak</span>
-          <strong>5</strong>
+          <strong>{dayStreak}</strong>
           <small>Keep it up! 🔥</small>
         </div>
       </section>
@@ -434,7 +437,7 @@ aria-label="Open profile"
 
                     <div className="recent-score">
                       {score !== null &&
-                      score !== undefined ? (
+                        score !== undefined ? (
                         <>
                           <strong>
                             {Math.round(
@@ -492,48 +495,6 @@ aria-label="Open profile"
       </section>
 
       {/* Bottom navigation */}
-      <nav className="bottom-nav">
-        <button
-          type="button"
-          className="bottom-nav-item active"
-          onClick={() =>
-            navigate("/dashboard")
-          }
-        >
-          <span>⌂</span>
-          <small>Home</small>
-        </button>
-
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={openHistory}
-        >
-          <span>◷</span>
-          <small>History</small>
-        </button>
-
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={startInterview}
-        >
-          <span className="nav-plus">
-            +
-          </span>
-
-          <small>Practice</small>
-        </button>
-
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={openSettings}
-        >
-          <span>⚙</span>
-          <small>Settings</small>
-        </button>
-      </nav>
       <BottomNav />
     </main>
   );

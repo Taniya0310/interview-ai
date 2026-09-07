@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS interviews (
     status TEXT NOT NULL DEFAULT 'in_progress',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
-    CONSTRAINT interviews_status_check CHECK (status IN ('in_progress', 'processing', 'completed', 'failed', 'cancelled'))
+    CONSTRAINT interviews_status_check CHECK (status IN ('in_progress', 'processing', 'completed', 'failed', 'cancelled', 'quit'))
 );
 
 CREATE TABLE IF NOT EXISTS interview_questions (

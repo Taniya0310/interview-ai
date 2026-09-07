@@ -10,7 +10,7 @@
   --bg: #f7f7f6;
   --surface: #ffffff;
   --surface-soft: #f1f1ef;
-  --surface-orange: #fff4e8;
+  --surface-blue: #fff4e8;
 
   --black: #0b1220;
   --black-soft: #111827;
@@ -22,29 +22,18 @@
   --border: #e6e1db;
   --border-dark: #cfc6bc;
 
-  /* ---------- Orange ---------- */
-  --orange-950: #1b120b;
-  --orange-900: #2b1a0d;
-  --orange-800: #512b0d;
-  --orange-700: #a84b00;
-  --orange-600: #ff9b1c;
-  --orange-500: #ff9b1c;
-  --orange-400: #ff9b1c;
-  --orange-300: #ff9b1c;
-  --orange-100: #ff9b1c;
-  --orange-50: #ff9b1c;
+  /* ---------- Blue ---------- */
+  --blue-950: #1b120b;
+  --blue-900: #2b1a0d;
+  --blue-800: #512b0d;
+  --blue-700: #a84b00;
+  --blue-600: #e56700;
+  --blue-500: #f27b22;
+  --blue-400: #ff9d55;
+  --blue-300: #ffc08e;
 
-  /* Legacy aliases used by older component rules; all map to the orange palette. */
-  --blue-950: var(--orange-950);
-  --blue-900: var(--orange-900);
-  --blue-800: var(--orange-800);
-  --blue-700: var(--orange-700);
-  --blue-600: var(--orange-600);
-  --blue-500: var(--orange-500);
-  --blue-400: var(--orange-400);
-  --blue-300: var(--orange-300);
-  --blue-100: var(--orange-100);
-  --blue-50: var(--orange-50);
+  --blue-100: #ffe8d2;
+  --blue-50: #fff5eb;
 
   /* ---------- Green ---------- */
   --green-700: #16704a;
@@ -6092,4 +6081,67 @@ button {
 
 .nav-plus::before {
   content: none !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 90px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  background: #fff7ed;
+  color: #7c2d12;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+}
+
+.app-toast p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.app-toast button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
 }

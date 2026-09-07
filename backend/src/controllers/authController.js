@@ -16,9 +16,10 @@ async function sendOtp(req, res, next) {
     }
 
     const result =
-      await authService.requestEmailOtp(
-        email
-      );
+     await authService.requestEmailOtp(
+  email,
+  req.body.mode || "login"
+);
 
     res.json(result);
   } catch (error) {

@@ -347,3 +347,58 @@
   background: #ffffff;
   white-space: nowrap;
 }
+.google-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.google-dialog {
+  width: min(100%, 360px);
+  padding: 28px 22px 22px;
+  text-align: center;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+}
+
+.google-dialog-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  color: #4285f4;
+  background: #f1f5ff;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.google-dialog h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+}
+
+.google-dialog p {
+  margin: 12px 0 20px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.google-dialog-button {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #f28c00;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

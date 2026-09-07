@@ -23,7 +23,7 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
-      await sendOtp(email);
+      await sendOtp(email, "signup");
 
       navigate("/verify-otp", {
         state: {

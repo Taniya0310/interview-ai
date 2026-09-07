@@ -1,19 +1,37 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Share2, LogOut } from "lucide-react";
+import {
+  X,
+  Share2,
+  LogOut,
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  History,
+  Camera,
+  Mic,
+  Volume2,
+  Database,
+  Info,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
+import BottomNav from "../components/BottomNav";
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { logout } = useAuth();
 const [showLogoutModal, setShowLogoutModal] =
   useState(false);
+  const [appMessage, setAppMessage] = useState("");
   function handleClearSession() {
     sessionStorage.removeItem("currentInterview");
     sessionStorage.removeItem("currentInterviewId");
     sessionStorage.removeItem("currentReport");
 
-    alert("Current interview session cleared.");
+   setAppMessage("Current interview session cleared.");
+
+setTimeout(() => {
+  setAppMessage("");
+}, 2500);
   }
 
  function handleLogout() {
@@ -32,7 +50,13 @@ function handleShareApp() {
   if (window.AndroidTTS?.shareApp) {
     window.AndroidTTS.shareApp();
   } else {
-    alert("App sharing is available in the Android app.");
+   setAppMessage(
+  "App sharing is available in the Android app."
+);
+
+setTimeout(() => {
+  setAppMessage("");
+}, 2500);
   }
 }
   return (
@@ -374,57 +398,23 @@ function handleShareApp() {
       </section>
 
       {/* Bottom Navigation */}
-      <nav className="bottom-nav">
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={() =>
-            navigate("/dashboard")
-          }
-        >
-          <span>⌂</span>
-          <small>Home</small>
-        </button>
+      
 
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={() =>
-            navigate(
-              "/interview/history"
-            )
-          }
-        >
-          <span>◷</span>
-          <small>History</small>
-        </button>
+      {appMessage && (
+  <div className="app-toast" role="status">
+    <span>✓</span>
 
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={() =>
-            navigate(
-              "/interview/setup"
-            )
-          }
-        >
-          <span className="nav-plus">
-            +
-          </span>
-          <small>Practice</small>
-        </button>
+    <p>{appMessage}</p>
 
-        <button
-          type="button"
-          className="bottom-nav-item active"
-          onClick={() =>
-            navigate("/settings")
-          }
-        >
-          <span>⚙</span>
-          <small>Settings</small>
-        </button>
-      </nav>
+    <button
+      type="button"
+      onClick={() => setAppMessage("")}
+      aria-label="Close message"
+    >
+      ×
+    </button>
+  </div>
+)}
       {showLogoutModal && (
   <div className="logout-modal-overlay">
     <div className="logout-modal">
@@ -460,6 +450,7 @@ function handleShareApp() {
     </div>
   </div>
 )}
+<BottomNav />
     </main>
     
   );

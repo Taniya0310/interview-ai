@@ -79,6 +79,18 @@ exports.quit = async (req, res, next) => {
     next(error);
   }
 };
+exports.streak = async (req, res, next) => {
+  try {
+    const streak =
+      await interviewService.getDayStreak(
+        req.user.userId
+      );
+
+    res.json({ streak });
+  } catch (error) {
+    next(error);
+  }
+};
 exports.finish = async (req, res, next) => {
   try {
     const userId =
