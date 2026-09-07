@@ -6082,3 +6082,66 @@ button {
 .nav-plus::before {
   content: none !important;
 }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 90px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  background: #fff7ed;
+  color: #7c2d12;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+}
+
+.app-toast p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.app-toast button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}

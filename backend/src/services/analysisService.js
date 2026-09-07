@@ -9,7 +9,7 @@ async function processFastAnswer(answerId) {
     `SELECT
        a.*,
        iq.follow_up_count,
-       q.text AS question,
+       COALESCE(a.question_text, q.text) AS question,
        q.expected_topics,
        q.reference_answer,
        q.answer_key_points
@@ -150,7 +150,7 @@ async function runDetailedQuestionAnalysis(
        a.mime_type,
        a.is_follow_up,
        a.created_at,
-       q.text AS question,
+       COALESCE(a.question_text, q.text) AS question,
        q.expected_topics,
        an.result
      FROM answers a
@@ -282,7 +282,7 @@ async function report(interviewId) {
        iq.position,
        iq.follow_up_count,
        iq.is_satisfied,
-       q.text AS question,
+       COALESCE(a.question_text, q.text) AS question,
        a.id AS answer_id,
        a.status AS answer_status,
        a.is_follow_up,
@@ -305,23 +305,23 @@ async function report(interviewId) {
     return null;
   }
 
-  const analyses = result.rows
-    .map((row) => {
-      const value =
-        typeof row.result === "string"
-          ? JSON.parse(row.result)
-          : row.result;
+ const analyses = result.rows
+  .filter(
+    (row) =>
+      row.answer_id &&
+      row.is_follow_up === false
+  )
+  .map((row) => {
+    const value =
+      typeof row.result === "string"
+        ? JSON.parse(row.result)
+        : row.result;
 
-      return value?.metricsPending === false
-        ? value
-        : null;
-    })
-    .filter(Boolean)
-    .map((value) =>
-      typeof value === "string"
-        ? JSON.parse(value)
-        : value
-    );
+    return value?.metricsPending === false
+      ? value
+      : null;
+  })
+  .filter(Boolean);
 
   return {
     id: interviewId,
@@ -345,13 +345,41 @@ async function report(interviewId) {
           Math.round(analyses.reduce((sum, item) => sum + Number(item.speechMetrics?.[key] || 0), 0) / analyses.length),
         ]))
       : {},
-    answers: result.rows.map((row) => ({
+   answers: result.rows
+  .filter((row) => row.answer_id)
+  .map((row) => {
+    const parsedResult =
+      typeof row.result === "string"
+        ? JSON.parse(row.result)
+        : row.result;
+
+    return {
       ...row,
-      result:
-        typeof row.result === "string"
-          ? JSON.parse(row.result)
-          : row.result,
-    })),
+
+      questionType:
+        row.is_follow_up === true
+          ? "follow_up"
+          : "main",
+
+      result: parsedResult,
+
+      score:
+        parsedResult?.score ??
+        parsedResult?.overallScore ??
+        null,
+
+      feedback:
+        parsedResult?.feedback ??
+        parsedResult?.questionFeedback ??
+        null,
+
+      transcript:
+        parsedResult?.transcript ?? null,
+
+      metricsPending:
+        parsedResult?.metricsPending ?? false,
+    };
+  }),
   };
 }
 

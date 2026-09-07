@@ -16,7 +16,7 @@ export default function BottomNav() {
   const location = useLocation();
 
   const isActive = (path) => {
-    return location.pathname.startsWith(path);
+    return location.pathname === path;
   };
 
   return (
@@ -25,13 +25,9 @@ export default function BottomNav() {
         <button
           type="button"
           className={`bottom-nav-item ${
-            isActive("/dashboard")
-              ? "active"
-              : ""
+            isActive("/dashboard") ? "active" : ""
           }`}
-          onClick={() =>
-            navigate("/dashboard")
-          }
+          onClick={() => navigate("/dashboard")}
         >
           <span className="bottom-nav-icon">
             <Home size={19} strokeWidth={1.9} />
@@ -54,10 +50,7 @@ export default function BottomNav() {
           }
         >
           <span className="bottom-nav-icon">
-            <History
-              size={19}
-              strokeWidth={1.9}
-            />
+            <History size={19} strokeWidth={1.9} />
           </span>
 
           <span className="bottom-nav-label">
@@ -68,7 +61,7 @@ export default function BottomNav() {
         <button
           type="button"
           className={`bottom-nav-item ${
-            isActive("/training")
+            isActive("/training/setup")
               ? "active"
               : ""
           }`}
@@ -91,7 +84,7 @@ export default function BottomNav() {
         <button
           type="button"
           className={`bottom-nav-item ${
-            isActive("/interview")
+            isActive("/interview/setup")
               ? "active"
               : ""
           }`}
@@ -111,13 +104,9 @@ export default function BottomNav() {
         <button
           type="button"
           className={`bottom-nav-item ${
-            isActive("/settings")
-              ? "active"
-              : ""
+            isActive("/settings") ? "active" : ""
           }`}
-          onClick={() =>
-            navigate("/settings")
-          }
+          onClick={() => navigate("/settings")}
         >
           <span className="bottom-nav-icon">
             <Settings

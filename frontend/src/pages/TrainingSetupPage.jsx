@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import {
   getTrainingCategories,
-  createTrainingSession
+  createTrainingSession,
 } from "../services/trainingApi";
 
 export default function TrainingSetupPage() {
@@ -11,10 +11,17 @@ export default function TrainingSetupPage() {
 
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState("");
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
+
+  const selectedCategory =
+    categories.find(
+      (category) =>
+        String(category.id) === String(categoryId)
+    )?.name || "Select category";
 
   useEffect(() => {
     async function loadCategories() {
@@ -58,8 +65,8 @@ export default function TrainingSetupPage() {
         state: {
           session: result.session,
           questions: result.questions,
-          categoryId: Number(categoryId)
-        }
+          categoryId: Number(categoryId),
+        },
       });
     } catch (requestError) {
       setError(
@@ -105,27 +112,58 @@ export default function TrainingSetupPage() {
           Training category
         </label>
 
-        <select
-          id="category"
-          value={categoryId}
-          onChange={(event) =>
-            setCategoryId(event.target.value)
-          }
-          disabled={starting}
-        >
-          <option value="" disabled>
-            Select category
-          </option>
+        <div className="custom-select-wrapper">
+          <button
+            type="button"
+            id="category"
+            className="custom-select-trigger"
+            onClick={() =>
+              setCategoryOpen((open) => !open)
+            }
+            disabled={starting}
+          >
+            <span>{selectedCategory}</span>
+            <span className="custom-select-arrow">
+              ⌄
+            </span>
+          </button>
 
-          {categories.map((category) => (
-            <option
-              key={category.id}
-              value={category.id}
-            >
-              {category.name}
-            </option>
-          ))}
-        </select>
+          {categoryOpen && (
+            <div className="custom-select-menu">
+              {categories.map((category) => {
+                const isSelected =
+                  String(categoryId) ===
+                  String(category.id);
+
+                return (
+                  <button
+                    type="button"
+                    key={category.id}
+                    className="custom-select-option"
+                    onClick={() => {
+                      setCategoryId(
+                        String(category.id)
+                      );
+                      setCategoryOpen(false);
+                    }}
+                  >
+                    <span>{category.name}</span>
+
+                    <span
+                      className={`category-radio ${
+                        isSelected
+                          ? "selected"
+                          : ""
+                      }`}
+                    >
+                      {isSelected && "✓"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <div className="training-setup-info">
           <strong>How it works</strong>

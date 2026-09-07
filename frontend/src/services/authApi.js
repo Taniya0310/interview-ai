@@ -26,7 +26,7 @@ async function parseResponse(response) {
   return data;
 }
 
-async function sendOtp(email) {
+async function sendOtp(email, mode = "login") {
   const response = await fetch(
     `${API_BASE_URL}/auth/send-otp`,
     {
@@ -35,7 +35,8 @@ async function sendOtp(email) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        email: email.trim().toLowerCase()
+        email,
+        mode
       })
     }
   );

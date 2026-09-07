@@ -8,7 +8,12 @@ const API =
 async function api(path, options = {}) {
   return authenticatedFetch(path, options);
 }
-
+function getQuestionTypeLabel(answer) {
+  return answer?.questionType === "follow_up"
+    || answer?.is_follow_up === true
+    ? "Follow-up question"
+    : "Main question";
+}
 function getRadarPoints(scores, radius = 72, center = 90) {
   const values = Object.values(scores || {}).slice(0, 6).map((value) => {
     const number = Number(value);
@@ -768,6 +773,8 @@ export default function ResultsPage() {
 
         {answers.length > 0 ? (
           <div className="answer-results-list">
+            const questionType =
+  getQuestionTypeLabel(answer);
             {answers.map(
               (answer, index) => {
                 const score =
@@ -800,11 +807,13 @@ export default function ResultsPage() {
                     </div>
 
                     <div className="answer-result-content">
-                      <h3>
-                        {getQuestionText(
-                          answer
-                        )}
-                      </h3>
+                      <span className="answer-type-label">
+  {questionType}
+</span>
+
+<h3>
+  {getQuestionText(answer)}
+</h3>
 
                       {answer?.result
                         ?.metricsPending && (

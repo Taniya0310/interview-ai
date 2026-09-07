@@ -104,25 +104,36 @@ async function createSession(user) {
   };
 }
 
-async function requestEmailOtp(email) {
-  const cleanEmail =
-    email.toLowerCase().trim();
+async function requestEmailOtp(email, mode = "login") {
+  const cleanEmail = email.toLowerCase().trim();
 
-  if (
-    !cleanEmail ||
-    !cleanEmail.includes("@")
-  ) {
-    throw new Error(
-      "A valid email address is required"
-    );
+  if (!cleanEmail || !cleanEmail.includes("@")) {
+    throw new Error("Valid email is required");
   }
 
-  const otp = generateOtp();
-  const otpHash = hashOtp(otp);
+  const existingUser =
+    await userModel.findUserByEmail(cleanEmail);
 
-  const expiresAt = new Date(
-    Date.now() + 10 * 60 * 1000
-  );
+  if (mode === "login" && !existingUser) {
+    const error = new Error(
+      "Account not found. Please sign up first."
+    );
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (mode === "signup" && existingUser) {
+    const error = new Error(
+      "Account already exists. Please log in."
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // Only reach this point when OTP is allowed
+  const otp = generateOtp();
+  const otpHash = hashValue(otp);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await otpModel.saveOtp(
     cleanEmail,

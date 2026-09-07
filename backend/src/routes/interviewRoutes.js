@@ -1,5 +1,6 @@
 const r = require("express").Router();
-
+const authMiddleware =
+  require("../middleware/authMiddleware");
 const interviewController =
   require("../controllers/interviewController");
 
@@ -44,5 +45,9 @@ r.post(
   uploadMiddleware.single("video"),
   answerController.create
 );
-
+r.get(
+  "/streak",
+  authMiddleware,
+  interviewController.streak
+);
 module.exports = r;

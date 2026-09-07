@@ -184,37 +184,136 @@ async function getInterview(id, userId) {
 
   return result.rows[0] || null;
 }
+async function getDayStreak(userId) {
+  const result = await db.query(
+  `
+    SELECT DISTINCT activity_date
+    FROM (
+      SELECT
+        (completed_at AT TIME ZONE 'UTC')::date AS activity_date
+      FROM interviews
+      WHERE user_id = $1
+        AND status = 'completed'
+        AND completed_at IS NOT NULL
 
+      UNION
+
+      SELECT
+        (completed_at AT TIME ZONE 'UTC')::date AS activity_date
+      FROM training_sessions
+      WHERE user_id = $1
+        AND status = 'completed'
+        AND completed_at IS NOT NULL
+    ) AS user_activity
+    ORDER BY activity_date DESC
+  `,
+  [userId]
+);
+
+  const dates = result.rows.map((row) =>
+    String(row.activity_date)
+  );
+
+  if (dates.length === 0) {
+    return 0;
+  }
+
+  const today = new Date();
+
+  const todayDate = new Date(
+    Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate()
+    )
+  );
+
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setUTCDate(
+    yesterdayDate.getUTCDate() - 1
+  );
+
+  const latestDate = new Date(
+    `${dates[0]}T00:00:00Z`
+  );
+
+  const isToday =
+    latestDate.getTime() === todayDate.getTime();
+
+  const isYesterday =
+    latestDate.getTime() === yesterdayDate.getTime();
+
+  if (!isToday && !isYesterday) {
+    return 0;
+  }
+
+  let streak = 0;
+  let expectedDate = latestDate;
+
+  for (const date of dates) {
+    const activityDate = new Date(
+      `${date}T00:00:00Z`
+    );
+
+    if (
+      activityDate.getTime() !==
+      expectedDate.getTime()
+    ) {
+      break;
+    }
+
+    streak += 1;
+
+    expectedDate.setUTCDate(
+      expectedDate.getUTCDate() - 1
+    );
+  }
+
+  return streak;
+}
 async function listInterviews(userId) {
   const result = await db.query(
-    `
-      SELECT
-        i.*,
+  `
+    SELECT
+      i.*,
 
-        ROW_NUMBER() OVER (
-          PARTITION BY i.user_id
-          ORDER BY i.created_at ASC
-        ) AS interview_number,
+      (
+        SELECT ROUND(
+          AVG((an.result->>'score')::numeric)
+        )
+        FROM interview_questions iq2
+        JOIN answers a2
+          ON a2.interview_question_id = iq2.id
+        JOIN analyses an
+          ON an.answer_id = a2.id
+        WHERE iq2.interview_id = i.id
+          AND an.result->>'score' IS NOT NULL
+      ) AS score,
 
-        COUNT(iq.id) AS question_count,
+      ROW_NUMBER() OVER (
+        PARTITION BY i.user_id
+        ORDER BY i.created_at ASC
+      ) AS interview_number,
 
-        COUNT(iq.id) FILTER (
-          WHERE iq.is_satisfied = TRUE
-        ) AS completed_questions
+      COUNT(iq.id) AS question_count,
 
-      FROM interviews i
+      COUNT(iq.id) FILTER (
+        WHERE iq.is_satisfied = TRUE
+      ) AS completed_questions
 
-      LEFT JOIN interview_questions iq
-        ON iq.interview_id = i.id
+    FROM interviews i
 
-      WHERE i.user_id = $1
+    LEFT JOIN interview_questions iq
+      ON iq.interview_id = i.id
 
-      GROUP BY i.id
+    WHERE i.user_id = $1
 
-      ORDER BY i.created_at DESC
-    `,
-    [userId]
-  );
+    GROUP BY i.id
+
+    ORDER BY i.created_at DESC
+  `,
+  [userId]
+);
 
   return result.rows;
 }
@@ -308,5 +407,6 @@ module.exports = {
   finish: finishInterview,
   heartbeat,
   quit: quitInterview,
-  quitStale: quitStaleInterviews
+  quitStale: quitStaleInterviews,
+  getDayStreak
 };

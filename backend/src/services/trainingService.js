@@ -28,48 +28,51 @@ async function getQuestions(
   );
 }
 
-async function createSession(
-  userId,
-  data = {}
-) {
-  const categoryId =
-    Number(data.categoryId);
+async function createSession(userId, data = {}) {
+  try {
+    const categoryId = Number(data.categoryId);
 
-  const limit = Math.min(
-    Math.max(Number(data.limit) || 5, 1),
-    20
-  );
-
-  if (!categoryId) {
-    throw new Error(
-      "Category ID is required"
+    const limit = Math.min(
+      Math.max(Number(data.limit) || 5, 1),
+      20
     );
-  }
 
-  const questions =
-    await getQuestions(
+    if (!categoryId) {
+      throw new Error("Category ID is required");
+    }
+
+    const questions = await getQuestions(
       categoryId,
       limit
     );
 
-  if (!questions.length) {
-    throw new Error(
-      "No training questions found"
-    );
-  }
+    if (!questions.length) {
+      throw new Error("No training questions found");
+    }
 
-  const session =
-    await trainingModel.createSession(
+    const session =
+      await trainingModel.createSession(
+        userId,
+        categoryId,
+        data.difficulty || null,
+        questions.length
+      );
+
+    return {
+      session,
+      questions,
+    };
+  } catch (error) {
+    console.error("[TRAINING SESSION ERROR]", {
       userId,
-      categoryId,
-      data.difficulty || null,
-      questions.length
-    );
+      requestBody: data,
+      message: error.message,
+      detail: error.detail,
+      code: error.code,
+    });
 
-  return {
-    session,
-    questions
-  };
+    throw error;
+  }
 }
 
 async function submitAnswer(
