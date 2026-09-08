@@ -1,6 +1,8 @@
 const r = require("express").Router();
+
 const authMiddleware =
   require("../middleware/authMiddleware");
+
 const interviewController =
   require("../controllers/interviewController");
 
@@ -18,6 +20,13 @@ r.get(
 r.post(
   "/",
   interviewController.create
+);
+
+// Static route must come before /:id
+r.get(
+  "/streak",
+  authMiddleware,
+  interviewController.streak
 );
 
 r.post(
@@ -51,4 +60,5 @@ r.post(
   uploadMiddleware.single("video"),
   answerController.create
 );
+
 module.exports = r;

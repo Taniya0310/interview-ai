@@ -1,42 +1,68 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authenticatedFetch } from "../services/authApi";
+import { getProfile } from "../services/profileApi";
+
 import {
   Clock3,
   CircleHelp,
   Code2,
-  Home,
-  History,
   MessageCircle,
-  Plus,
-  Settings,
   Shuffle,
-  Video,
+  Video
 } from "lucide-react";
+
+import BottomNav from "../components/BottomNav";
 
 async function api(path, options = {}) {
   return authenticatedFetch(path, options);
 }
 
-function formatLabel(value) {
-  return String(value || "")
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 export default function InterviewSetupPage() {
   const navigate = useNavigate();
 
-  const [interviewType, setInterviewType] = useState("technical");
+  const [interviewType, setInterviewType] =
+    useState("technical");
+
+  const [domain, setDomain] = useState("");
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] =
+    useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const profile = await getProfile();
+        setDomain(profile.domain || "");
+      } catch (requestError) {
+        setError(
+          requestError.message ||
+            "Unable to load your profile."
+        );
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+
+    loadProfile();
+  }, []);
 
   async function handleStart(event) {
     event.preventDefault();
 
-    if (loading) return;
+    if (loading || profileLoading) {
+      return;
+    }
 
     setError("");
+
+    if (interviewType === "technical" && !domain) {
+      setError(
+        "Technical domain is not set in your profile. Please select a domain first."
+      );
+      return;
+    }
 
     try {
       setLoading(true);
@@ -48,11 +74,15 @@ export default function InterviewSetupPage() {
       const interview = await api("/interviews", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           interviewType,
-        }),
+          domain:
+            interviewType === "technical"
+              ? domain
+              : null
+        })
       });
 
       const interviewId =
@@ -78,7 +108,10 @@ export default function InterviewSetupPage() {
 
       navigate("/interview/device-check");
     } catch (requestError) {
-      console.error("Create interview error:", requestError);
+      console.error(
+        "Create interview error:",
+        requestError
+      );
 
       setError(
         requestError?.message ||
@@ -89,11 +122,20 @@ export default function InterviewSetupPage() {
     }
   }
 
+  function selectInterviewType(type) {
+    setInterviewType(type);
+    setError("");
+  }
+
   function optionClass(type) {
     return interviewType === type
       ? "setup-option active"
       : "setup-option";
   }
+
+  const formattedDomain = domain
+    ? domain.replaceAll("_", " ")
+    : "";
 
   return (
     <main className="mobile-page interview-setup-page">
@@ -107,13 +149,12 @@ export default function InterviewSetupPage() {
         </button>
 
         <div className="page-header">
-          <div className="eyebrow">INTERVIEW AI</div>
+          <div className="eyebrow">SKILLZAGE AI</div>
 
           <h1>Set up your interview</h1>
 
           <p>
-            Choose a category. All active questions from
-            that category will be asked.
+            Choose a category for your interview.
           </p>
         </div>
       </header>
@@ -128,7 +169,7 @@ export default function InterviewSetupPage() {
           </span>
 
           <small>DURATION</small>
-          <strong>30 min</strong>
+          <strong>20 min</strong>
         </div>
 
         <div className="setup-meta-item">
@@ -150,42 +191,48 @@ export default function InterviewSetupPage() {
         </div>
       </section>
 
-      <form className="setup-form" onSubmit={handleStart}>
+      <form
+        className="setup-form"
+        onSubmit={handleStart}
+      >
         <section className="setup-section">
           <div className="section-heading">
-            <div>
-              <span className="eyebrow">STEP 01</span>
+            <span className="eyebrow">STEP 01</span>
 
-              <h2>Interview category</h2>
+            <h2>Interview category</h2>
 
-              <p>
-                Select the type of interview you want to
-                practice.
-              </p>
-            </div>
+            <p>
+              Select the type of interview you want to
+              practice.
+            </p>
           </div>
 
           <div className="setup-option-grid">
             <button
               type="button"
               className={optionClass("technical")}
-              onClick={() => setInterviewType("technical")}
+              onClick={() =>
+                selectInterviewType("technical")
+              }
+              disabled={profileLoading}
             >
               <span className="setup-option-icon">
-                <Code2 size={28} strokeWidth={1.8} />
+                <Code2 size={28} />
               </span>
 
               <span className="setup-option-content">
-                <strong>Technical</strong>
+                <strong>Domain specific</strong>
 
                 <small>
-                  Coding, systems, APIs, and technical
-                  concepts
+                  Questions based on your selected
+                  technical domain.
                 </small>
               </span>
 
               <span className="setup-option-check">
-                {interviewType === "technical" ? "✓" : ""}
+                {interviewType === "technical"
+                  ? "✓"
+                  : ""}
               </span>
             </button>
 
@@ -193,19 +240,19 @@ export default function InterviewSetupPage() {
               type="button"
               className={optionClass("non-technical")}
               onClick={() =>
-                setInterviewType("non-technical")
+                selectInterviewType("non-technical")
               }
             >
               <span className="setup-option-icon">
-                <MessageCircle size={28} strokeWidth={1.8} />
+                <MessageCircle size={28} />
               </span>
 
               <span className="setup-option-content">
                 <strong>Non-Technical</strong>
 
                 <small>
-                  Introduction, communication, teamwork,
-                  and workplace situations
+                  Introduction, communication,
+                  teamwork, and workplace situations.
                 </small>
               </span>
 
@@ -219,10 +266,12 @@ export default function InterviewSetupPage() {
             <button
               type="button"
               className={optionClass("mixed")}
-              onClick={() => setInterviewType("mixed")}
+              onClick={() =>
+                selectInterviewType("mixed")
+              }
             >
               <span className="setup-option-icon">
-                <Shuffle size={28} strokeWidth={1.8} />
+                <Shuffle size={28} />
               </span>
 
               <span className="setup-option-content">
@@ -230,30 +279,52 @@ export default function InterviewSetupPage() {
 
                 <small>
                   Combination of technical and
-                  non-technical questions
+                  non-technical questions.
                 </small>
               </span>
 
               <span className="setup-option-check">
-                {interviewType === "mixed" ? "✓" : ""}
+                {interviewType === "mixed"
+                  ? "✓"
+                  : ""}
               </span>
             </button>
           </div>
         </section>
 
-        <section className="setup-summary">
-          <div className="eyebrow">INTERVIEW SUMMARY</div>
+        {interviewType === "technical" &&
+          !profileLoading &&
+          !domain && (
+            <div className="form-error">
+              <span>!</span>
 
-          <div className="setup-summary-row">
-            <span>Category</span>
-            <strong>{formatLabel(interviewType)}</strong>
-          </div>
+              <p>
+                Technical domain is not set in your
+                profile. Please select a domain before
+                starting a technical interview.
+              </p>
+            </div>
+          )}
 
-          <div className="setup-summary-row">
-            <span>Questions</span>
-            <strong>All active questions</strong>
-          </div>
-        </section>
+        {interviewType === "technical" &&
+          !profileLoading &&
+          !domain && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => navigate("/profile")}
+            >
+              Set Technical Domain in Profile
+            </button>
+          )}
+
+        {interviewType === "technical" &&
+          domain && (
+            <p className="field-hint">
+              Technical domain selected:{" "}
+              <strong>{formattedDomain}</strong>
+            </p>
+          )}
 
         {error && (
           <div className="form-error">
@@ -266,9 +337,11 @@ export default function InterviewSetupPage() {
           <button
             type="submit"
             className="primary-btn"
-            disabled={loading}
+            disabled={loading || profileLoading}
           >
-            {loading
+            {profileLoading
+              ? "Loading Profile..."
+              : loading
               ? "Creating Interview..."
               : "Start Interview"}
 
@@ -291,55 +364,7 @@ export default function InterviewSetupPage() {
         <span>→</span>
       </button>
 
-      <nav className="bottom-nav">
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={() => navigate("/dashboard")}
-        >
-          <span>
-            <Home size={20} strokeWidth={1.9} />
-          </span>
-
-          <small>Home</small>
-        </button>
-
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={() => navigate("/interview/history")}
-        >
-          <span>
-            <History size={20} strokeWidth={1.9} />
-          </span>
-
-          <small>History</small>
-        </button>
-
-        <button
-          type="button"
-          className="bottom-nav-item active"
-          onClick={() => navigate("/interview/setup")}
-        >
-          <span className="nav-plus">
-            <Plus size={24} strokeWidth={2} />
-          </span>
-
-          <small>Practice</small>
-        </button>
-
-        <button
-          type="button"
-          className="bottom-nav-item"
-          onClick={() => navigate("/settings")}
-        >
-          <span>
-            <Settings size={20} strokeWidth={1.9} />
-          </span>
-
-          <small>Settings</small>
-        </button>
-      </nav>
+      <BottomNav />
     </main>
   );
 }

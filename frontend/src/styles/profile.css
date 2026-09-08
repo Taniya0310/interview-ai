@@ -255,3 +255,137 @@
     margin-bottom: 8px;
   }
 }
+
+/* Technical domain dropdown */
+.profile-page .custom-select {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.profile-page .custom-select-button {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  color: #111827;
+
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-page .custom-select-button:hover,
+.profile-page .custom-select-button:focus {
+  border-color: #ff641b;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 100, 27, 0.12);
+}
+
+.profile-page .custom-select-button > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-page .custom-select-arrow {
+  flex: 0 0 auto;
+  color: #f45a0b;
+  font-size: 13px;
+}
+
+.profile-page .custom-select-menu {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+
+  padding: 6px;
+
+  border: 1px solid #f1dfd2;
+  border-radius: 12px;
+  background: #fff;
+
+  box-shadow: 0 12px 28px rgba(52, 37, 23, 0.16);
+}
+
+.profile-page .custom-select-option {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 10px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border-radius: 9px;
+  background: transparent;
+  color: #374151;
+
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-page .custom-select-option:hover {
+  background: #fff1e5;
+  color: #d9530b;
+}
+
+.profile-page .custom-select-option > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-page .occupation-radio {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+}
+
+.profile-page .occupation-radio.selected {
+  border-color: #ff641b;
+}
+
+.profile-page .occupation-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff641b;
+}
+
+@media (max-width: 480px) {
+  .profile-page .custom-select-button {
+    min-height: 48px;
+    font-size: 13px;
+  }
+
+  .profile-page .custom-select-menu {
+    max-height: 220px;
+  }
+
+  .profile-page .custom-select-option {
+    min-height: 46px;
+    font-size: 13px;
+  }
+}

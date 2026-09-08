@@ -8,6 +8,7 @@ async function findProfileByUserId(userId) {
         full_name,
         phone_number,
         occupation,
+        domain,
         institution_company,
         created_at,
         updated_at
@@ -33,6 +34,7 @@ async function createProfile(userId) {
         full_name,
         phone_number,
         occupation,
+        domain,
         institution_company,
         created_at,
         updated_at
@@ -52,6 +54,7 @@ async function updateProfile(
   fullName,
   phoneNumber,
   occupation,
+  domain,
   institutionCompany
 ) {
   const result = await db.query(
@@ -61,14 +64,16 @@ async function updateProfile(
         full_name,
         phone_number,
         occupation,
+        domain,
         institution_company
       )
-      VALUES ($1, $2, $3, $4, $5)
+      VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (user_id)
       DO UPDATE SET
         full_name = EXCLUDED.full_name,
         phone_number = EXCLUDED.phone_number,
         occupation = EXCLUDED.occupation,
+        domain = EXCLUDED.domain,
         institution_company = EXCLUDED.institution_company,
         updated_at = CURRENT_TIMESTAMP
       RETURNING
@@ -76,6 +81,7 @@ async function updateProfile(
         full_name,
         phone_number,
         occupation,
+        domain,
         institution_company,
         created_at,
         updated_at
@@ -85,6 +91,7 @@ async function updateProfile(
       fullName || null,
       phoneNumber || null,
       occupation || null,
+      domain || null,
       institutionCompany || null
     ]
   );
