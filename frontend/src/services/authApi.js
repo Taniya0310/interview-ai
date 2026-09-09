@@ -94,6 +94,7 @@ async function authenticatedFetch(
     `${API_BASE_URL}${endpoint}`,
     {
       ...options,
+      cache: "no-store",
       headers
     }
   );

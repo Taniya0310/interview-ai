@@ -186,7 +186,7 @@ export default function DashboardPage() {
       <header className="dashboard-header">
         <div>
           <div className="eyebrow">
-            SKILLZAGE AI
+            SkillzageAI
           </div>
 
           <h1>

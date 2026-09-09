@@ -45,12 +45,6 @@ r.post(
 );
 
 r.get(
-  "/streak",
-  authMiddleware,
-  interviewController.streak
-);
-
-r.get(
   "/:id",
   interviewController.get
 );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BriefcaseBusiness, ChevronDown } from "lucide-react";
 
 import {
   getTrainingCategories,
@@ -117,12 +118,19 @@ export default function TrainingSetupPage() {
             type="button"
             id="category"
             className="custom-select-trigger"
+            aria-expanded={categoryOpen}
+            aria-haspopup="listbox"
             onClick={() =>
               setCategoryOpen((open) => !open)
             }
             disabled={starting}
           >
-            <span>{selectedCategory}</span>
+            <span className="custom-select-value">
+              <span className="custom-select-leading-icon">
+                <BriefcaseBusiness size={17} strokeWidth={2} />
+              </span>
+              <span>{selectedCategory}</span>
+            </span>
             <span className="custom-select-arrow">
               ⌄
             </span>

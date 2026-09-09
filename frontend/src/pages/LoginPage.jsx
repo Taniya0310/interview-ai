@@ -43,7 +43,10 @@ export default function LoginPage() {
   return (
     <main className="auth-page">
       <section className="auth-card auth-card-login">
-        <p className="eyebrow">INTERVIEW AI</p>
+        <div className="auth-brand" aria-label="SkillzageAI">
+          <img src="/INSTAGRAM%20SKILLZAGE.png" alt="SkillzageAI" />
+          <span>SkillzageAI</span>
+        </div>
 
         <h1>Welcome back</h1>
 

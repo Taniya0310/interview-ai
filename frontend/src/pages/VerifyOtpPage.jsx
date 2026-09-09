@@ -94,7 +94,7 @@ export default function VerifyOtpPage() {
     return (
       <main className="auth-page">
         <section className="auth-card">
-          <p className="eyebrow">INTERVIEW AI</p>
+          <p className="eyebrow">SkillzageAI</p>
 
           <h1>Email required</h1>
 
@@ -117,7 +117,7 @@ export default function VerifyOtpPage() {
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <p className="eyebrow">INTERVIEW AI</p>
+          <p className="eyebrow">SkillzageAI</p>
 
         <h1>Verify your email</h1>
 

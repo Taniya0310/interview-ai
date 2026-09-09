@@ -1,4 +1,5 @@
 import React from "react";
+import { ListChecks, Plus } from "lucide-react";
 
 function AdminDashboardPage({
   onQuestions,
@@ -12,7 +13,7 @@ function AdminDashboardPage({
         {/* Header */}
         <header className="admin-header">
           <div>
-            <p className="admin-eyebrow">INTERVIEW AI</p>
+            <p className="admin-eyebrow">SkillzageAI</p>
 
             <h1>Admin Dashboard</h1>
 
@@ -69,7 +70,7 @@ function AdminDashboardPage({
               onClick={onQuestions}
             >
               <div className="admin-action-icon">
-                ?
+                <ListChecks size={28} strokeWidth={2.1} />
               </div>
 
               <div className="admin-action-content">
@@ -92,7 +93,7 @@ function AdminDashboardPage({
               onClick={onCreateQuestion}
             >
               <div className="admin-action-icon">
-                +
+                <Plus size={30} strokeWidth={2.2} />
               </div>
 
               <div className="admin-action-content">

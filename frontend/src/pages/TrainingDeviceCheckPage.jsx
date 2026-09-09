@@ -140,20 +140,24 @@ export default function TrainingDeviceCheckPage() {
           </p>
         </div>
 
-        <div
-          className={
-            micStatus === "ready"
-              ? "training-device-icon ready"
-              : micStatus === "unavailable"
-                ? "training-device-icon error"
-                : "training-device-icon checking"
-          }
-        >
-          {micStatus === "unavailable" ? (
-            <MicOff size={42} />
-          ) : (
-            <Mic size={42} />
-          )}
+        <div className="training-device-orb-shell">
+          <span className="training-device-orbit training-device-orbit-inner" />
+          <span className="training-device-orbit training-device-orbit-outer" />
+          <div
+            className={
+              micStatus === "ready"
+                ? "training-device-icon ready"
+                : micStatus === "unavailable"
+                  ? "training-device-icon error"
+                  : "training-device-icon checking"
+            }
+          >
+            {micStatus === "ready" || micStatus === "checking" ? null : micStatus === "unavailable" ? (
+              <MicOff size={42} />
+            ) : (
+              <Mic size={42} />
+            )}
+          </div>
         </div>
 
         <div className="training-device-status">

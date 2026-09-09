@@ -686,7 +686,7 @@ function speakQuestion() {
           </div>
 
           <span className="training-progress">
-            {questionIndex + 1} / {questions.length}
+            Question {questionIndex + 1} of {questions.length}
           </span>
         </div>
 
@@ -716,31 +716,28 @@ function speakQuestion() {
         </section>
 
         <section className="training-record-card">
-          <div
-            className={
-              recording
-                ? "training-mic recording"
-                : "training-mic"
-            }
-          >
-            {recording ? (
-              <MicOff size={34} />
-            ) : (
-              <Mic size={34} />
-            )}
+          <div className={recording ? "training-orb-shell listening" : "training-orb-shell"}>
+            <span className="training-orbit training-orbit-inner" />
+            <span className="training-orbit training-orbit-outer" />
+            <div className={recording ? "training-mic recording" : "training-mic"}>
+            </div>
           </div>
 
-          <h3>
+          <h3 className={recording ? "training-listening-title" : ""}>
             {recording
-              ? "Listening..."
+              ? "LISTENING"
               : submitting
               ? "Analyzing your answer..."
               : "Preparing your question..."}
           </h3>
 
+          {recording && (
+            <strong className="training-turn">Your turn</strong>
+          )}
+
           <p>
             {recording
-              ? "Speak clearly. Your answer will submit automatically after 3 seconds of silence."
+              ? "Speak naturally — your answer will submit automatically after 3 seconds of silence."
               : submitting
               ? "Please wait while we review your response."
               : "Please listen carefully. Recording will start automatically."}

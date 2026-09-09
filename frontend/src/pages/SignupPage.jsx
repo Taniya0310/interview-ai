@@ -43,7 +43,10 @@ export default function SignupPage() {
   return (
     <main className="auth-page">
       <section className="auth-card auth-card-signup">
-        <p className="eyebrow">INTERVIEW AI</p>
+        <div className="auth-brand" aria-label="SkillzageAI">
+          <img src="/INSTAGRAM%20SKILLZAGE.png" alt="SkillzageAI" />
+          <span>SkillzageAI</span>
+        </div>
 
         <h1>Create your account</h1>
 

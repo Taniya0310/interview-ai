@@ -149,7 +149,7 @@ export default function InterviewSetupPage() {
         </button>
 
         <div className="page-header">
-          <div className="eyebrow">SKILLZAGE AI</div>
+          <div className="eyebrow">SkillzageAI</div>
 
           <h1>Set up your interview</h1>
 

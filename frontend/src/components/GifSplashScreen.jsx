@@ -5,7 +5,7 @@ export default function GifSplashScreen() {
     <div className="gif-splash-screen">
       <img
         src="/splash.gif"
-        alt="Interview AI"
+        alt="SkillzageAI"
       />
     </div>
   );
