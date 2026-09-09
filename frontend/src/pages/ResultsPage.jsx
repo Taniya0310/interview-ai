@@ -9,8 +9,13 @@ async function api(path, options = {}) {
   return authenticatedFetch(path, options);
 }
 function getQuestionTypeLabel(answer) {
-  return answer?.questionType === "follow_up"
-    || answer?.is_follow_up === true
+  const isFollowUp =
+    answer?.questionType === "follow_up" ||
+    answer?.question_type === "follow_up" ||
+    answer?.is_follow_up === true ||
+    answer?.isFollowUp === true;
+
+  return isFollowUp
     ? "Follow-up question"
     : "Main question";
 }
@@ -205,6 +210,23 @@ function getAnswerScore(answer) {
 }
 
 function getQuestionText(answer) {
+  const isFollowUp =
+    answer?.questionType === "follow_up" ||
+    answer?.question_type === "follow_up" ||
+    answer?.is_follow_up === true ||
+    answer?.isFollowUp === true;
+
+  if (isFollowUp) {
+    return (
+      answer?.question_text ??
+      answer?.questionText ??
+      answer?.follow_up_question ??
+      answer?.followUpQuestion ??
+      answer?.question ??
+      "Follow-up question"
+    );
+  }
+
   return (
     answer?.question ??
     answer?.question_text ??
@@ -770,99 +792,66 @@ export default function ResultsPage() {
             {answers.length}
           </span>
         </div>
+{answers.length > 0 ? (
+  <div className="answer-results-list">
+    {answers.map((answer, index) => {
+      const questionType =
+        getQuestionTypeLabel(answer);
 
-        {answers.length > 0 ? (
-          <div className="answer-results-list">
-            const questionType =
-  getQuestionTypeLabel(answer);
-            {answers.map(
-              (answer, index) => {
-                const score =
-                  getAnswerScore(
-                    answer
-                  );
+      const score = getAnswerScore(answer);
 
-                return (
-                  <button
-                    type="button"
-                    className="answer-result-card"
-                    key={`${getAnswerId(
-                      answer,
-                      index
-                    )}-${index}`}
-                    onClick={() =>
-                      handleAnswer(
-                        answer,
-                        index
-                      )
-                    }
-                  >
-                    <div className="answer-number">
-                      {String(
-                        index + 1
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
-                    </div>
+      return (
+        <button
+          type="button"
+          className="answer-result-card"
+          key={`${getAnswerId(answer, index)}-${index}`}
+          onClick={() => handleAnswer(answer, index)}
+        >
+          <div className="answer-number">
+            {String(index + 1).padStart(2, "0")}
+          </div>
 
-                    <div className="answer-result-content">
-                      <span className="answer-type-label">
-  {questionType}
-</span>
+          <div className="answer-result-content">
+            <span className="answer-type-label">
+              {questionType}
+            </span>
 
-<h3>
-  {getQuestionText(answer)}
-</h3>
+            <h3>
+              {getQuestionText(answer)}
+            </h3>
 
-                      {answer?.result
-                        ?.metricsPending && (
-                        <span className="metrics-pending">
-                          Detailed metrics are
-                          still processing
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="answer-result-score">
-                      {score !==
-                      null ? (
-                        <>
-                          <strong
-                            className={getScoreClass(
-                              score
-                            )}
-                          >
-                            {score}
-                          </strong>
-
-                          <small>
-                            /100
-                          </small>
-                        </>
-                      ) : (
-                        <span>
-                          View
-                        </span>
-                      )}
-
-                      <b>
-                        →
-                      </b>
-                    </div>
-                  </button>
-                );
-              }
+            {answer?.result?.metricsPending && (
+              <span className="metrics-pending">
+                Detailed metrics are still processing
+              </span>
             )}
           </div>
-        ) : (
-          <div className="results-empty">
-            <p>
-              Individual answer results are
-              not available yet.
-            </p>
+
+          <div className="answer-result-score">
+            {score !== null ? (
+              <>
+                <strong className={getScoreClass(score)}>
+                  {score}
+                </strong>
+                <small>/100</small>
+              </>
+            ) : (
+              <span>View</span>
+            )}
+
+            <b>→</b>
           </div>
-        )}
+        </button>
+      );
+    })}
+  </div>
+) : (
+  <div className="results-empty">
+    <p>
+      Individual answer results are not available yet.
+    </p>
+  </div>
+)}
       </section>
 
       {/* Actions */}

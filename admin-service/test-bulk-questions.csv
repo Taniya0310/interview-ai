@@ -1,0 +1,4 @@
+question,expected_topics,reference_answer,answer_keypoints
+"What is React?","components,hooks,virtual DOM","React is a JavaScript library for building user interfaces.","component-based architecture,virtual DOM,reusable components"
+"What is REST?","HTTP,API,statelessness","REST is an architectural style for designing networked applications.","stateless communication,resources,HTTP methods"
+"What is a database index?","databases,SQL,performance","A database index improves the speed of data retrieval operations.","faster queries,lookup structure,additional storage"

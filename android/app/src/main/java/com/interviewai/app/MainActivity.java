@@ -22,7 +22,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.content.Intent;
 import android.net.Uri;
-
+import java.io.FileInputStream;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
@@ -204,17 +204,18 @@ return;
     }
 
 
-    private void shareAppApk() {
+private void shareAppApk() {
     try {
-        File apkFile =
-                new File(
-                        getCacheDir(),
-                        "skillzageai.apk"
-                );
+        File apkFile = new File(
+                getCacheDir(),
+                "skillzageai.apk"
+        );
 
         try (
                 InputStream input =
-                        getAssets().open("skillzageai.apk");
+                        new FileInputStream(
+                                getApplicationInfo().sourceDir
+                        );
 
                 OutputStream output =
                         new FileOutputStream(apkFile)
@@ -227,16 +228,13 @@ return;
             }
         }
 
-        Uri apkUri =
-                FileProvider.getUriForFile(
-                        this,
-                        getPackageName()
-                                + ".fileprovider",
-                        apkFile
-                );
+        Uri apkUri = FileProvider.getUriForFile(
+                this,
+                getPackageName() + ".fileprovider",
+                apkFile
+        );
 
-        Intent shareIntent =
-                new Intent(Intent.ACTION_SEND);
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
 
         shareIntent.setType(
                 "application/vnd.android.package-archive"
@@ -272,7 +270,8 @@ return;
         ).show();
     }
 }
-  private void showDownloadDialog() {
+
+private void showDownloadDialog() {
     runOnUiThread(() -> {
         View dialogView = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_voice_assets, null);

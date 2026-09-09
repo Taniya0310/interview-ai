@@ -41,7 +41,7 @@ export default function TrainingPage() {
   const timerRef = useRef(null);
   const feedbackTimerRef = useRef(null);
   const ttsTimerRef = useRef(null);
-
+const ttsRunIdRef = useRef(0);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -96,7 +96,7 @@ export default function TrainingPage() {
     }
   }
 
- function clearTtsTimer() {
+function clearTtsTimer() {
   if (ttsTimerRef.current) {
     clearTimeout(ttsTimerRef.current);
     ttsTimerRef.current = null;
@@ -191,62 +191,69 @@ function speakQuestion() {
 
   const nativeTts = window.AndroidTTS;
 
-  if (nativeTts?.speakChunk) {
-    try {
-      nativeTts.stop?.();
-      nativeTts.clearQueue?.();
+  if (!nativeTts?.speakChunk) {
+    setMessage("I'm listening. Take your time.");
+    startRecording();
+    return;
+  }
 
-      ttsChunkerRef.current =
-        createTtsChunker();
+  try {
+    nativeTts.stop?.();
+    nativeTts.clearQueue?.();
 
-      ttsChunkIdRef.current = 0;
+    ttsChunkerRef.current = createTtsChunker();
+    ttsChunkIdRef.current = 0;
 
-      const chunks =
-        ttsChunkerRef.current.addText(
-          questionText
-        );
+    const chunks = ttsChunkerRef.current.addText(
+      questionText
+    );
 
-      const finalChunk =
-        ttsChunkerRef.current.flush();
+    const finalChunk =
+      ttsChunkerRef.current.flush();
 
-      if (finalChunk) {
-        chunks.push(finalChunk);
+    if (finalChunk?.trim()) {
+      chunks.push(finalChunk);
+    }
+
+    const validChunks = chunks.filter(
+      (chunk) => chunk && chunk.trim()
+    );
+
+    console.log("[TTS] Full question:", questionText);
+    console.log("[TTS] Total chunks:", validChunks.length);
+
+    let chunkIndex = 0;
+
+    function speakNextChunk() {
+      if (!mountedRef.current) {
+        return;
       }
 
-      chunks.forEach((chunk) => {
-        if (!chunk || !chunk.trim()) {
-          return;
-        }
-
-        ttsChunkIdRef.current += 1;
-
-        nativeTts.speakChunk(
-          chunk,
-          String(ttsChunkIdRef.current)
-        );
-      });
-
-      const wordCount =
-        questionText
+      if (chunkIndex >= validChunks.length) {
+        const wordCount = questionText
           .trim()
           .split(/\s+/)
-          .length;
+          .filter(Boolean).length;
 
-      /*
-       * Give Android TTS enough time to finish.
-       * This prevents the final words from being cut.
-       */
-      const estimatedSpeechTime =
-        Math.max(
-          2500,
-          wordCount * 700
+        const estimatedSpeechTime = Math.max(
+          3500,
+          wordCount * 650
         );
 
-      ttsTimerRef.current =
-        setTimeout(() => {
+        console.log(
+          "[TTS] All chunks sent. Waiting:",
+          estimatedSpeechTime,
+          "ms"
+        );
+
+        ttsTimerRef.current = setTimeout(() => {
           if (!mountedRef.current) {
             return;
           }
+
+          console.log(
+            "[TTS] Finished. Starting recording."
+          );
 
           setMessage(
             "I'm listening. Take your time."
@@ -255,20 +262,46 @@ function speakQuestion() {
           startRecording();
         }, estimatedSpeechTime);
 
-      return;
-    } catch (ttsError) {
-      console.error(
-        "[TRAINING TTS ERROR]",
-        ttsError
+        return;
+      }
+
+      const chunk = validChunks[chunkIndex];
+
+      ttsChunkIdRef.current += 1;
+
+      console.log("[TTS] Speaking chunk:", {
+        chunkNumber: chunkIndex + 1,
+        totalChunks: validChunks.length,
+        text: chunk,
+      });
+
+      nativeTts.speakChunk(
+        chunk,
+        String(ttsChunkIdRef.current)
+      );
+
+      chunkIndex += 1;
+
+      // Wait before sending the next chunk.
+      ttsTimerRef.current = setTimeout(
+        speakNextChunk,
+        900
       );
     }
+
+    speakNextChunk();
+  } catch (ttsError) {
+    console.error(
+      "[TRAINING TTS ERROR]",
+      ttsError
+    );
+
+    setMessage(
+      "I'm listening. Take your time."
+    );
+
+    startRecording();
   }
-
-  setMessage(
-    "I'm listening. Take your time."
-  );
-
-  startRecording();
 }
 
   useEffect(() => {

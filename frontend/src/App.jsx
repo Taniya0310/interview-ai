@@ -3,16 +3,14 @@ import {
   Routes,
   Route,
   Navigate,
-  useNavigate,
-  useParams,
   useLocation
 } from "react-router-dom";
-import TrainingSetupPage
-  from "./pages/TrainingSetupPage";
+
 import { useEffect, useState } from "react";
 import "./styles/auth.css";
-import TrainingPage
-  from "./pages/TrainingPage";
+
+import TrainingSetupPage from "./pages/TrainingSetupPage";
+import TrainingPage from "./pages/TrainingPage";
 import {
   AuthProvider,
   useAuth
@@ -36,75 +34,8 @@ import ResultsPage from "./pages/ResultsPage";
 import AnswerDetailPage from "./pages/AnswerDetailPage";
 import InterviewHistoryPage from "./pages/InterviewHistoryPage";
 import SettingsPage from "./pages/SettingsPage";
-import TrainingDeviceCheckPage
-  from "./pages/TrainingDeviceCheckPage";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
-import QuestionsPage from "./pages/admin/QuestionsPage";
-import CreateQuestionPage from "./pages/admin/CreateQuestionPage";
-import EditQuestionPage from "./pages/admin/EditQuestionPage";
-import GoogleCallbackPage
-  from "./pages/GoogleCallbackPage";
-function AdminDashboardRoute() {
-  const navigate = useNavigate();
-
-  return (
-    <AdminDashboardPage
-      onHome={() => navigate("/")}
-      onQuestions={() => navigate("/admin/questions")}
-      onCreateQuestion={() =>
-        navigate("/admin/questions/create")
-      }
-    />
-  );
-}
-
-function AdminQuestionsRoute() {
-  const navigate = useNavigate();
-
-  return (
-    <QuestionsPage
-      onBack={() => navigate("/admin")}
-      onCreate={() =>
-        navigate("/admin/questions/create")
-      }
-      onEdit={(id) =>
-        navigate(`/admin/questions/edit/${id}`)
-      }
-    />
-  );
-}
-
-function AdminCreateRoute() {
-  const navigate = useNavigate();
-
-  return (
-    <CreateQuestionPage
-      onBack={() =>
-        navigate("/admin/questions")
-      }
-      onCreated={() =>
-        navigate("/admin/questions")
-      }
-    />
-  );
-}
-
-function AdminEditRoute() {
-  const navigate = useNavigate();
-  const { id } = useParams();
-
-  return (
-    <EditQuestionPage
-      questionId={id}
-      onBack={() =>
-        navigate("/admin/questions")
-      }
-      onUpdated={() =>
-        navigate("/admin/questions")
-      }
-    />
-  );
-}
+import TrainingDeviceCheckPage from "./pages/TrainingDeviceCheckPage";
+import GoogleCallbackPage from "./pages/GoogleCallbackPage";
 
 function GlobalBottomNav() {
   const location = useLocation();
@@ -114,7 +45,6 @@ function GlobalBottomNav() {
     location.pathname === "/login" ||
     location.pathname === "/signup" ||
     location.pathname === "/verify-otp" ||
-    location.pathname.startsWith("/admin") ||
     location.pathname === "/interview/live";
 
   return hidden ? null : <BottomNav />;
@@ -136,17 +66,15 @@ function ScrollToTop() {
 
 function App() {
   const { user } = useAuth();
-
-  const [showSplash, setShowSplash] =
-    useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-  if (!user || showSplash) {
-    return;
-  }
+    if (!user || showSplash) {
+      return;
+    }
 
-  window.AndroidTTS?.startModelCheck?.();
-}, [user, showSplash]);
+    window.AndroidTTS?.startModelCheck?.();
+  }, [user, showSplash]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -180,16 +108,17 @@ function App() {
           path="/verify-otp"
           element={<VerifyOtpPage />}
         />
-<Route
-  path="/google-callback"
-  element={<GoogleCallbackPage />}
-/>
+
+        <Route
+          path="/google-callback"
+          element={<GoogleCallbackPage />}
+        />
+
         <Route
           path="/"
           element={
-            localStorage.getItem(
-              "hasSeenLanding"
-            ) === "true" ? (
+            localStorage.getItem("hasSeenLanding") ===
+            "true" ? (
               <Navigate
                 to="/dashboard"
                 replace
@@ -210,18 +139,22 @@ function App() {
             path="/profile"
             element={<ProfilePage />}
           />
-<Route
-  path="/training/setup"
-  element={<TrainingSetupPage />}
-/>
-<Route
-  path="/training"
-  element={<TrainingPage />}
-/>
-<Route
-  path="/training/device-check"
-  element={<TrainingDeviceCheckPage />}
-/>
+
+          <Route
+            path="/training/setup"
+            element={<TrainingSetupPage />}
+          />
+
+          <Route
+            path="/training"
+            element={<TrainingPage />}
+          />
+
+          <Route
+            path="/training/device-check"
+            element={<TrainingDeviceCheckPage />}
+          />
+
           <Route
             path="/interview/setup"
             element={<InterviewSetupPage />}
@@ -264,29 +197,12 @@ function App() {
         </Route>
 
         <Route
-          path="/admin"
-          element={<AdminDashboardRoute />}
-        />
-
-        <Route
-          path="/admin/questions"
-          element={<AdminQuestionsRoute />}
-        />
-
-        <Route
-          path="/admin/questions/create"
-          element={<AdminCreateRoute />}
-        />
-
-        <Route
-          path="/admin/questions/edit/:id"
-          element={<AdminEditRoute />}
-        />
-
-        <Route
           path="*"
           element={
-            <Navigate to="/" replace />
+            <Navigate
+              to="/"
+              replace
+            />
           }
         />
       </Routes>

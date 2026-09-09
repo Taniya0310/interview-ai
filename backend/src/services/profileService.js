@@ -2,14 +2,29 @@ const profileModel =
   require("../models/profileModel");
 
 const allowedDomains = [
-  "software_developer",
-  "data_science",
-  "ai_ml",
-  "cybersecurity",
-  "cloud_devops",
-  "testing_qa",
-  "database",
-  "networking"
+  "computer_science_it",
+  "business_management",
+  "finance_banking",
+  "commerce_accounting",
+  "marketing_sales_customer_service",
+  "human_resources",
+  "operations_supply_chain",
+  "science_research",
+  "agribusiness",
+  "food_technology",
+  "healthcare",
+  "pharmacy",
+  "law_legal_services",
+  "media_journalism",
+  "ui_ux_design",
+  "architecture",
+  "education_training",
+  "hospitality_tourism",
+  "aviation",
+  "automotive",
+  "industrial_manufacturing",
+  "sustainability",
+  "public_services",
 ];
 
 async function getProfile(userId) {
