@@ -12,6 +12,9 @@ const adminQuestionRoutes = require("./routes/adminQuestionRoutes");
 const adminInterviewRoutes = require("./routes/adminInterviewRoutes");
 const adminDomainRoutes = require("./routes/adminDomainRoutes");
 const adminCategoryRoutes = require("./routes/adminCategoryRoutes");
+const auditLogRoutes = require("./routes/auditLogRoutes");
+
+const errorMiddleware = require("./middleware/errorMiddleware");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -21,45 +24,64 @@ app.use(
     origin:
       process.env.FRONTEND_URL ||
       "http://localhost:5173",
-  })
+  }),
 );
 
-// Body parser must come before all routes
 app.use(express.json());
+
+// Request logger
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+
+  res.on("finish", () => {
+    console.log(
+      `${new Date().toISOString()} ${req.method} ${
+        req.originalUrl
+      } ${res.statusCode} ${Date.now() - startedAt}ms`,
+    );
+  });
+
+  next();
+});
 
 app.use(
   "/api/admin/auth",
-  adminAuthRoutes
+  adminAuthRoutes,
 );
 
 app.use(
   "/api/admin/dashboard",
-  adminDashboardRoutes
+  adminDashboardRoutes,
 );
 
 app.use(
   "/api/admin/users",
-  adminUserRoutes
+  adminUserRoutes,
 );
 
 app.use(
   "/api/admin/questions",
-  adminQuestionRoutes
+  adminQuestionRoutes,
+);
+
+app.use(
+  "/api/admin/audit-logs",
+  auditLogRoutes,
 );
 
 app.use(
   "/api/admin/interviews",
-  adminInterviewRoutes
+  adminInterviewRoutes,
 );
 
 app.use(
   "/api/admin/domains",
-  adminDomainRoutes
+  adminDomainRoutes,
 );
 
 app.use(
   "/api/admin/categories",
-  adminCategoryRoutes
+  adminCategoryRoutes,
 );
 
 app.get("/health", async (req, res) => {
@@ -82,8 +104,11 @@ app.get("/health", async (req, res) => {
   }
 });
 
+// Error middleware must be registered last.
+app.use(errorMiddleware);
+
 app.listen(PORT, () => {
   console.log(
-    `Admin service running on port ${PORT}`
+    `Admin service running on port ${PORT}`,
   );
 });

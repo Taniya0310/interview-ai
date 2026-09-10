@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getDashboardData } from "../services/dashboardService";
 import { getAdminUser } from "../services/authService";
 
@@ -15,36 +15,90 @@ function formatDate(value) {
 function formatStatus(status) {
   return String(status || "unknown")
     .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase(),
+    );
+}
+
+function getStatusClass(status) {
+  const value = String(status || "").toLowerCase();
+
+  if (
+    value === "completed" ||
+    value === "verified" ||
+    value === "active"
+  ) {
+    return "success";
+  }
+
+  if (
+    value === "cancelled" ||
+    value === "failed" ||
+    value === "inactive"
+  ) {
+    return "danger";
+  }
+
+  return "warning";
 }
 
 export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   const admin = getAdminUser();
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const data = await getDashboardData();
-        setDashboard(data);
-      } catch (requestError) {
-        setError(requestError.message);
-      } finally {
-        setLoading(false);
-      }
+  async function loadDashboard(showRefresh = false) {
+    if (showRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
     }
 
+    setError("");
+
+    try {
+      const data = await getDashboardData();
+      setDashboard(data);
+    } catch (requestError) {
+      setError(
+        requestError.message ||
+          "Failed to load dashboard",
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  useEffect(() => {
     loadDashboard();
   }, []);
+
+  const statistics = dashboard?.statistics || {};
+  const recentUsers = dashboard?.recentUsers || [];
+  const recentInterviews =
+    dashboard?.recentInterviews || [];
+
+  const interviewStatusData = useMemo(() => {
+    const counts = {};
+
+    recentInterviews.forEach((interview) => {
+      const status = interview.status || "unknown";
+      counts[status] = (counts[status] || 0) + 1;
+    });
+
+    return Object.entries(counts);
+  }, [recentInterviews]);
 
   if (loading) {
     return (
       <section className="admin-page">
-        <div className="admin-card">
-          <p>Loading dashboard...</p>
+        <div className="dashboard-loading-card">
+          <div className="dashboard-spinner" />
+          <p>Loading admin dashboard...</p>
         </div>
       </section>
     );
@@ -53,186 +107,379 @@ export default function AdminDashboardPage() {
   if (error) {
     return (
       <section className="admin-page">
-        <div className="admin-card">
-          <p className="error">{error}</p>
+        <div className="dashboard-error-card">
+          <h2>Unable to load dashboard</h2>
+          <p>{error}</p>
+
+          <button
+            type="button"
+            className="admin-primary-button"
+            onClick={() => loadDashboard()}
+          >
+            Try again
+          </button>
         </div>
       </section>
     );
   }
 
-  const statistics = dashboard?.statistics || {};
-  const recentUsers = dashboard?.recentUsers || [];
-  const recentInterviews = dashboard?.recentInterviews || [];
-
   return (
     <section className="admin-dashboard-page">
-      <header className="admin-page-header">
+      <header className="dashboard-hero">
         <div>
-          <p>Welcome back, {admin?.name || admin?.email}</p>
-          <h1>Admin Dashboard</h1>
+          <p className="dashboard-eyebrow">
+            ADMINISTRATION CENTER
+          </p>
+
+          <h1>
+            Good day,{" "}
+            {admin?.name ||
+              admin?.email ||
+              "Administrator"}
+          </h1>
+
+          <p>
+            Monitor your platform activity and manage
+            operations from one place.
+          </p>
         </div>
 
-        <span className="admin-live-badge">
-          System active
-        </span>
+        <div className="dashboard-header-actions">
+          <span className="admin-live-badge">
+            <span className="live-dot" />
+            System active
+          </span>
+
+          <button
+            type="button"
+            className="admin-secondary-button"
+            onClick={() => loadDashboard(true)}
+            disabled={refreshing}
+          >
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
       </header>
 
-      <div className="admin-stats-grid">
-        <article className="admin-stat-card blue">
-          <span>Total users</span>
-          <strong>{statistics.total_users || 0}</strong>
-          <small>Registered users</small>
-        </article>
+      <div className="dashboard-stat-grid">
+        <StatCard
+          label="Total users"
+          value={statistics.total_users}
+          caption="Registered accounts"
+          icon="US"
+          tone="blue"
+        />
 
-        <article className="admin-stat-card green">
-          <span>Verified users</span>
-          <strong>{statistics.verified_users || 0}</strong>
-          <small>Verified accounts</small>
-        </article>
+        <StatCard
+          label="Verified users"
+          value={statistics.verified_users}
+          caption="Verified accounts"
+          icon="✓"
+          tone="green"
+        />
 
-        <article className="admin-stat-card purple">
-          <span>Total interviews</span>
-          <strong>{statistics.total_interviews || 0}</strong>
-          <small>All interview sessions</small>
-        </article>
+        <StatCard
+          label="Total interviews"
+          value={statistics.total_interviews}
+          caption="All sessions"
+          icon="IN"
+          tone="purple"
+        />
 
-        <article className="admin-stat-card orange">
-          <span>Completed interviews</span>
-          <strong>{statistics.completed_interviews || 0}</strong>
-          <small>Finished sessions</small>
-        </article>
+        <StatCard
+          label="Completed interviews"
+          value={statistics.completed_interviews}
+          caption="Finished sessions"
+          icon="OK"
+          tone="orange"
+        />
 
-        <article className="admin-stat-card cyan">
-          <span>Active questions</span>
-          <strong>{statistics.active_questions || 0}</strong>
-          <small>Available questions</small>
-        </article>
+        <StatCard
+          label="Active questions"
+          value={statistics.active_questions}
+          caption="Available questions"
+          icon="Q"
+          tone="cyan"
+        />
 
-        <article className="admin-stat-card red">
-          <span>Total analyses</span>
-          <strong>{statistics.total_analyses || 0}</strong>
-          <small>Generated analyses</small>
-        </article>
+        <StatCard
+          label="Total analyses"
+          value={statistics.total_analyses}
+          caption="Generated reports"
+          icon="AI"
+          tone="red"
+        />
       </div>
 
-      <div className="admin-dashboard-columns">
-        <section className="admin-table-section">
-          <div className="admin-section-heading">
+      <div className="dashboard-content-grid">
+        <section className="dashboard-panel dashboard-panel-wide">
+          <div className="dashboard-panel-header">
             <div>
-              <span>USER ACTIVITY</span>
-              <h2>Recent users</h2>
+              <p className="dashboard-panel-label">
+                OVERVIEW
+              </p>
+              <h2>Interview activity</h2>
             </div>
 
-            <button type="button">View all</button>
+            <span className="dashboard-panel-meta">
+              Recent activity
+            </span>
           </div>
 
-          <div className="admin-table-wrapper">
-            {recentUsers.length === 0 ? (
-              <p className="admin-empty">No users found.</p>
-            ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Joined</th>
-                  </tr>
-                </thead>
+          {interviewStatusData.length === 0 ? (
+            <div className="dashboard-empty">
+              No interview activity available.
+            </div>
+          ) : (
+            <div className="dashboard-status-list">
+              {interviewStatusData.map(
+                ([status, count]) => {
+                  const total =
+                    recentInterviews.length || 1;
 
-                <tbody>
-                  {recentUsers.map((user) => (
-                    <tr key={user.user_id}>
-                      <td>
-                        <strong>
-                          {user.full_name || "Unnamed user"}
-                        </strong>
-                        <small>{user.user_id}</small>
-                      </td>
+                  const percentage = Math.round(
+                    (count / total) * 100,
+                  );
 
-                      <td>{user.email}</td>
-
-                      <td>
+                  return (
+                    <div
+                      className="dashboard-status-row"
+                      key={status}
+                    >
+                      <div className="dashboard-status-title">
                         <span
-                          className={
-                            user.is_verified
-                              ? "status-badge"
-                              : "status-badge inactive"
-                          }
-                        >
-                          {user.is_verified
-                            ? "Verified"
-                            : "Unverified"}
-                        </span>
-                      </td>
+                          className={`status-dot ${getStatusClass(
+                            status,
+                          )}`}
+                        />
 
-                      <td>{formatDate(user.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                        <strong>
+                          {formatStatus(status)}
+                        </strong>
+
+                        <span>{count}</span>
+                      </div>
+
+                      <div className="dashboard-progress">
+                        <span
+                          style={{
+                            width: `${percentage}%`,
+                          }}
+                        />
+                      </div>
+
+                      <small>{percentage}%</small>
+                    </div>
+                  );
+                },
+              )}
+            </div>
+          )}
         </section>
 
-        <section className="admin-table-section">
-          <div className="admin-section-heading">
+        <section className="dashboard-panel">
+          <div className="dashboard-panel-header">
             <div>
-              <span>INTERVIEW ACTIVITY</span>
+              <p className="dashboard-panel-label">
+                QUICK SUMMARY
+              </p>
+              <h2>System health</h2>
+            </div>
+          </div>
+
+          <div className="dashboard-health-list">
+            <HealthRow
+              label="Database"
+              value="Connected"
+              status="success"
+            />
+
+            <HealthRow
+              label="Admin service"
+              value="Operational"
+              status="success"
+            />
+
+            <HealthRow
+              label="Question bank"
+              value={`${statistics.active_questions || 0} active`}
+              status="success"
+            />
+
+            <HealthRow
+              label="Analysis engine"
+              value="Available"
+              status="success"
+            />
+          </div>
+        </section>
+      </div>
+
+      <div className="dashboard-content-grid">
+        <section className="dashboard-panel">
+          <div className="dashboard-panel-header">
+            <div>
+              <p className="dashboard-panel-label">
+                USER ACTIVITY
+              </p>
+              <h2>Recent users</h2>
+            </div>
+          </div>
+
+          {recentUsers.length === 0 ? (
+            <div className="dashboard-empty">
+              No users found.
+            </div>
+          ) : (
+            <div className="dashboard-record-list">
+              {recentUsers.slice(0, 5).map((user) => (
+                <div
+                  className="dashboard-record"
+                  key={user.user_id}
+                >
+                  <div className="dashboard-avatar">
+                    {String(
+                      user.full_name ||
+                        user.email ||
+                        "U",
+                    )
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
+
+                  <div className="dashboard-record-main">
+                    <strong>
+                      {user.full_name ||
+                        "Unnamed user"}
+                    </strong>
+
+                    <span>{user.email}</span>
+                  </div>
+
+                  <div className="dashboard-record-side">
+                    <span
+                      className={`dashboard-status-badge ${
+                        user.is_verified
+                          ? "success"
+                          : "warning"
+                      }`}
+                    >
+                      {user.is_verified
+                        ? "Verified"
+                        : "Pending"}
+                    </span>
+
+                    <small>
+                      {formatDate(user.created_at)}
+                    </small>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-panel">
+          <div className="dashboard-panel-header">
+            <div>
+              <p className="dashboard-panel-label">
+                INTERVIEW ACTIVITY
+              </p>
               <h2>Recent interviews</h2>
             </div>
-
-            <button type="button">View all</button>
           </div>
 
-          <div className="admin-table-wrapper">
-            {recentInterviews.length === 0 ? (
-              <p className="admin-empty">
-                No interviews found.
-              </p>
-            ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Interview</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
+          {recentInterviews.length === 0 ? (
+            <div className="dashboard-empty">
+              No interviews found.
+            </div>
+          ) : (
+            <div className="dashboard-record-list">
+              {recentInterviews
+                .slice(0, 5)
+                .map((interview) => (
+                  <div
+                    className="dashboard-record"
+                    key={interview.id}
+                  >
+                    <div className="dashboard-avatar interview">
+                      IN
+                    </div>
 
-                <tbody>
-                  {recentInterviews.map((interview) => (
-                    <tr key={interview.id}>
-                      <td>
-                        <strong>
-                          {interview.interview_type ||
-                            "Interview"}
-                        </strong>
-                        <small>{interview.user_id}</small>
-                      </td>
+                    <div className="dashboard-record-main">
+                      <strong>
+                        {interview.role ||
+                          "Interview session"}
+                      </strong>
 
-                      <td>
-                        {interview.role || "—"}
-                      </td>
+                      <span>
+                        {interview.interview_type ||
+                          "General interview"}
+                      </span>
+                    </div>
 
-                      <td>
-                        <span className="status-badge interview-status">
-                          {formatStatus(interview.status)}
-                        </span>
-                      </td>
+                    <div className="dashboard-record-side">
+                      <span
+                        className={`dashboard-status-badge ${getStatusClass(
+                          interview.status,
+                        )}`}
+                      >
+                        {formatStatus(
+                          interview.status,
+                        )}
+                      </span>
 
-                      <td>
-                        {formatDate(interview.created_at)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                      <small>
+                        {formatDate(
+                          interview.created_at,
+                        )}
+                      </small>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </section>
       </div>
     </section>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  caption,
+  icon,
+  tone,
+}) {
+  return (
+    <article
+      className={`dashboard-stat-card ${tone}`}
+    >
+      <div className="dashboard-stat-top">
+        <span>{label}</span>
+        <div className="dashboard-stat-icon">
+          {icon}
+        </div>
+      </div>
+
+      <strong>{value || 0}</strong>
+      <small>{caption}</small>
+    </article>
+  );
+}
+
+function HealthRow({ label, value, status }) {
+  return (
+    <div className="dashboard-health-row">
+      <div>
+        <span
+          className={`status-dot ${status}`}
+        />
+        <strong>{label}</strong>
+      </div>
+
+      <span>{value}</span>
+    </div>
   );
 }

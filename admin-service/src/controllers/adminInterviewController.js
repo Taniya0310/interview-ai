@@ -2,12 +2,26 @@ const interviewManagementService = require("../services/interviewManagementServi
 
 async function getInterviews(req, res) {
   try {
-    const interviews =
-      await interviewManagementService.listInterviews();
+    const page = Math.max(
+      Number.parseInt(req.query.page, 10) || 1,
+      1,
+    );
 
-    res.json({
-      interviews,
-    });
+    const limit = Math.min(
+      Math.max(
+        Number.parseInt(req.query.limit, 10) || 10,
+        1,
+      ),
+      100,
+    );
+
+    const result =
+      await interviewManagementService.listInterviews({
+        page,
+        limit,
+      });
+
+    res.json(result);
   } catch (error) {
     console.error("Admin interviews error:", error);
 
@@ -21,7 +35,7 @@ async function getInterviewById(req, res) {
   try {
     const interview =
       await interviewManagementService.findInterviewById(
-        req.params.id
+        req.params.id,
       );
 
     if (!interview) {

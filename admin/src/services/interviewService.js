@@ -1,7 +1,12 @@
 import { adminRequest } from "./adminapi";
 
-export function getInterviews() {
-  return adminRequest("/interviews");
+export function getInterviews({
+  page = 1,
+  limit = 10,
+} = {}) {
+  return adminRequest(
+    `/interviews?page=${page}&limit=${limit}`,
+  );
 }
 
 export function getInterviewById(id) {

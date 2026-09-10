@@ -1,7 +1,18 @@
 const pool = require("../config/database");
 
-async function listInterviews() {
-  const result = await pool.query(`
+async function listInterviews({
+  page = 1,
+  limit = 10,
+} = {}) {
+  const offset = (page - 1) * limit;
+
+  const countResult = await pool.query(`
+    SELECT COUNT(*)::INTEGER AS total
+    FROM interviews
+  `);
+
+  const result = await pool.query(
+    `
     SELECT
       i.id,
       i.user_id,
@@ -13,9 +24,23 @@ async function listInterviews() {
       i.completed_at
     FROM interviews i
     ORDER BY i.created_at DESC
-  `);
+    LIMIT $1
+    OFFSET $2
+    `,
+    [limit, offset],
+  );
 
-  return result.rows;
+  const total = countResult.rows[0].total;
+
+  return {
+    interviews: result.rows,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 async function findInterviewById(id) {
@@ -64,8 +89,10 @@ async function findInterviewById(id) {
                           'analysis_id', an.id,
                           'result', an.result,
                           'status', an.status,
-                          'completed_at', an.completed_at,
-                          'created_at', an.created_at
+                          'completed_at',
+                            an.completed_at,
+                          'created_at',
+                            an.created_at
                         )
                       END
                     )
@@ -93,7 +120,7 @@ async function findInterviewById(id) {
     WHERE i.id = $1
     LIMIT 1
     `,
-    [id]
+    [id],
   );
 
   return result.rows[0] || null;
