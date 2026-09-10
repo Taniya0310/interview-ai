@@ -36,45 +36,54 @@ export default function DashboardPage() {
   useEffect(() => {
     let mounted = true;
 
-    async function loadDashboard() {
-      try {
-        /*
-         * Change this endpoint only if your backend
-         * uses a different interview-history route.
-         */
-        const data = await api(
-          "/interviews"
-        );
+   async function loadDashboard() {
+  try {
+    setLoading(true);
 
+    const interviewsPromise = api("/interviews");
+    const streakPromise = api("/interviews/streak");
 
-        const streakData = await api(
-          "/interviews/streak"
-        );
-        if (!mounted) return;
-        setDayStreak(streakData?.streak || 0);
-        const interviews = Array.isArray(
-          data
-        )
-          ? data
-          : data?.interviews || [];
+    const data = await interviewsPromise;
 
-        setHistory(interviews);
-      } catch (err) {
-        console.error(
-          "Dashboard loading error:",
-          err
-        );
+    if (!mounted) return;
 
-        if (mounted) {
-          setHistory([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+    const interviews = Array.isArray(data)
+      ? data
+      : data?.interviews || data?.data || [];
+
+    setHistory(interviews);
+
+    try {
+      const streakData = await streakPromise;
+
+      if (mounted) {
+        setDayStreak(Number(streakData?.streak || 0));
+      }
+    } catch (streakError) {
+      console.warn(
+        "Streak loading failed:",
+        streakError
+      );
+
+      if (mounted) {
+        setDayStreak(0);
       }
     }
+  } catch (error) {
+    console.error(
+      "Dashboard interviews loading error:",
+      error
+    );
 
+    if (mounted) {
+      setHistory([]);
+    }
+  } finally {
+    if (mounted) {
+      setLoading(false);
+    }
+  }
+}
     loadDashboard();
 
     return () => {
@@ -108,12 +117,12 @@ export default function DashboardPage() {
   }
 
   function getStatus(interview) {
-    return (
-      interview?.status ||
-      interview?.state ||
-      "completed"
-    );
-  }
+  return String(
+    interview?.status ||
+    interview?.state ||
+    "completed"
+  ).toLowerCase();
+}
 
   function getRole(interview) {
     return `Interview ${interview?.interview_number || ""
@@ -145,38 +154,27 @@ export default function DashboardPage() {
       return "";
     }
   }
+const completedInterviews = history.filter((item) => {
+  const status = getStatus(item);
 
-  const completedInterviews =
-    history.filter(
-      (item) =>
-        getStatus(item) ===
-        "completed" ||
-        getStatus(item) ===
-        "finished"
-    );
+  return (
+    status === "completed" ||
+    status === "finished"
+  );
+});
 
-  const scores =
-    completedInterviews
-      .map((item) =>
-        Number(getScore(item))
-      )
-      .filter(
-        (score) =>
-          Number.isFinite(score) &&
-          score > 0
-      );
+const scores = completedInterviews
+  .map((item) => Number(getScore(item)))
+  .filter((score) => Number.isFinite(score));
 
-  const averageScore =
-    scores.length > 0
-      ? Math.round(
-        scores.reduce(
-          (sum, score) =>
-            sum + score,
-          0
-        ) / scores.length
-      )
-      : 0;
-
+const averageScore = scores.length
+  ? Math.round(
+      scores.reduce(
+        (sum, score) => sum + score,
+        0
+      ) / scores.length
+    )
+  : null;
   const recent =
     history.slice(0, 3);
 
@@ -268,7 +266,9 @@ export default function DashboardPage() {
           </span>
 
           <strong>
-            {averageScore || "—"}
+           {averageScore !== null
+  ? averageScore
+  : "—"}
           </strong>
 
           <small>

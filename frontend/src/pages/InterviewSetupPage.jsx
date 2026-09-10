@@ -59,7 +59,7 @@ export default function InterviewSetupPage() {
 
     if (interviewType === "technical" && !domain) {
       setError(
-        "Technical domain is not set in your profile. Please select a domain first."
+        "Domain is not set in your profile. Please select a domain first."
       );
       return;
     }
@@ -169,7 +169,7 @@ export default function InterviewSetupPage() {
           </span>
 
           <small>DURATION</small>
-          <strong>20 min</strong>
+          <strong>15 min</strong>
         </div>
 
         <div className="setup-meta-item">
@@ -225,7 +225,7 @@ export default function InterviewSetupPage() {
 
                 <small>
                   Questions based on your selected
-                  technical domain.
+                  Domain.
                 </small>
               </span>
 
@@ -299,7 +299,7 @@ export default function InterviewSetupPage() {
               <span>!</span>
 
               <p>
-                Technical domain is not set in your
+                Domain is not set in your
                 profile. Please select a domain before
                 starting a technical interview.
               </p>
@@ -314,14 +314,14 @@ export default function InterviewSetupPage() {
               className="secondary-btn"
               onClick={() => navigate("/profile")}
             >
-              Set Technical Domain in Profile
+              Set Domain in Profile
             </button>
           )}
 
         {interviewType === "technical" &&
           domain && (
             <p className="field-hint">
-              Technical domain selected:{" "}
+              Domain selected:{" "}
               <strong>{formattedDomain}</strong>
             </p>
           )}
@@ -354,15 +354,6 @@ export default function InterviewSetupPage() {
           </p>
         </section>
       </form>
-
-      <button
-        type="button"
-        className="setup-admin-link"
-        onClick={() => navigate("/admin/questions")}
-      >
-        <span>Question Bank</span>
-        <span>→</span>
-      </button>
 
       <BottomNav />
     </main>

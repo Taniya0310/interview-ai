@@ -19,3 +19,151 @@
 .exit-interview-btn:active {
   transform: translateY(0);
 }
+
+.answer-processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 22px auto 0;
+  text-align: center;
+}
+
+.processing-visual {
+  position: relative;
+  width: 142px;
+  height: 142px;
+  display: grid;
+  place-items: center;
+}
+
+.processing-ring {
+  position: absolute;
+  inset: 8px;
+  border: 8px dotted #fed7c2;
+  border-right-color: #fb7b32;
+  border-bottom-color: #fb7b32;
+  border-radius: 50%;
+  animation: processing-ring-spin 3s linear infinite;
+}
+
+.processing-bars {
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.processing-bars i {
+  width: 4px;
+  height: 20px;
+  border-radius: 5px;
+  background: #f97316;
+  animation: processing-bar-pulse 1s ease-in-out infinite;
+}
+
+.processing-bars i:nth-child(2) { height: 30px; animation-delay: .12s; }
+.processing-bars i:nth-child(3) { height: 38px; animation-delay: .24s; }
+.processing-bars i:nth-child(4) { height: 30px; animation-delay: .36s; }
+.processing-bars i:nth-child(5) { height: 20px; animation-delay: .48s; }
+
+.answer-processing p {
+  margin: 8px 0 0;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.answer-processing small {
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+@keyframes processing-ring-spin { to { transform: rotate(360deg); } }
+@keyframes processing-bar-pulse {
+  0%, 100% { transform: scaleY(.7); opacity: .65; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+/* Question playback / answer listening indicator */
+.interview-orb-shell {
+  position: relative;
+  width: 172px;
+  height: 172px;
+  display: grid;
+  place-items: center;
+  margin: 18px auto 0;
+}
+
+.interview-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  aspect-ratio: 1;
+  border: 7px dotted rgba(234, 88, 12, 0.24);
+  border-radius: 50%;
+  translate: -50% -50%;
+  pointer-events: none;
+  animation: interview-orbit-opacity 3s ease-in-out infinite;
+  transition: border-color 0.35s ease;
+}
+
+.interview-orbit-inner { width: 132px; height: 132px; }
+.interview-orbit-outer {
+  width: 172px;
+  height: 172px;
+  border-color: rgba(234, 88, 12, 0.16);
+  animation-delay: -1.2s;
+}
+
+.interview-orb-core {
+  z-index: 1;
+  width: 82px;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 46% 54% 58% 42% / 50% 44% 56% 50%;
+  background: radial-gradient(circle at 35% 30%, #ffb27a, #f4791f 55%, #d9640f 100%);
+  box-shadow: 0 0 0 10px rgba(244, 121, 31, 0.1), 0 0 40px 6px rgba(244, 121, 31, 0.22);
+  animation: interview-orb-morph 5s ease-in-out infinite;
+  transition: background 0.35s ease, box-shadow 0.35s ease;
+}
+
+.interview-orb-core i {
+  display: block;
+  width: 4px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  animation: interview-bars-pulse 1s ease-in-out infinite;
+}
+
+.interview-orb-core i:nth-child(2) { height: 29px; animation-delay: .12s; }
+.interview-orb-core i:nth-child(3) { height: 38px; animation-delay: .24s; }
+.interview-orb-core i:nth-child(4) { height: 29px; animation-delay: .36s; }
+.interview-orb-core i:nth-child(5) { height: 20px; animation-delay: .48s; }
+
+.interview-orb-shell.listening .interview-orbit { border-color: rgba(34, 197, 94, 0.28); }
+.interview-orb-shell.listening .interview-orbit-outer { border-color: rgba(34, 197, 94, 0.18); }
+.interview-orb-shell.listening .interview-orb-core {
+  background: radial-gradient(circle at 35% 30%, #86efac, #22c55e 55%, #15803d 100%);
+  box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.1), 0 0 40px 6px rgba(34, 197, 94, 0.22);
+}
+
+@keyframes interview-orbit-opacity {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@keyframes interview-orb-morph {
+  0%, 100% { border-radius: 46% 54% 58% 42% / 50% 44% 56% 50%; }
+  50% { border-radius: 55% 45% 43% 57% / 44% 58% 42% 56%; }
+}
+
+@keyframes interview-bars-pulse {
+  0%, 100% { transform: scaleY(.72); opacity: .7; }
+  50% { transform: scaleY(1); opacity: 1; }
+}

@@ -648,16 +648,6 @@ export default function InterviewHistoryPage() {
               filter.
             </p>
 
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => {
-                setSearch("");
-                setFilter("all");
-              }}
-            >
-              <X size={19} strokeWidth={2.4} aria-hidden="true" />
-            </button>
           </section>
         )}
 

@@ -98,7 +98,18 @@ setTimeout(() => {
         </div>
 
         <div className="settings-card">
-          <div className="settings-item">
+          <div
+            className="settings-item settings-item-clickable"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate("/interview/setup")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate("/interview/setup");
+              }
+            }}
+          >
             <div className="settings-icon">
               ✦
             </div>
@@ -116,9 +127,6 @@ setTimeout(() => {
             <button
               type="button"
               className="settings-action"
-              onClick={() =>
-                navigate("/interview/setup")
-              }
             >
               →
             </button>
@@ -126,7 +134,18 @@ setTimeout(() => {
 
           <div className="settings-divider" />
 
-          <div className="settings-item">
+          <div
+            className="settings-item settings-item-clickable"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate("/interview/history")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate("/interview/history");
+              }
+            }}
+          >
             <div className="settings-icon">
               ◷
             </div>
@@ -143,11 +162,6 @@ setTimeout(() => {
             <button
               type="button"
               className="settings-action"
-              onClick={() =>
-                navigate(
-                  "/interview/history"
-                )
-              }
             >
               →
             </button>

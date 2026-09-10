@@ -38,6 +38,9 @@ export default function LiveInterviewPage() {
   const [recording, setRecording] =
     useState(false);
 
+  const [questionSpeaking, setQuestionSpeaking] =
+    useState(false);
+
   const [canAutoSubmit, setCanAutoSubmit] =
     useState(true);
 
@@ -349,7 +352,6 @@ Question ${number} of ${total}.
 
 ${questionText}
 
-Please take your time. I am listening.
 `;
   }
 
@@ -366,6 +368,8 @@ Please take your time. I am listening.
     startRecording();
     return;
   }
+
+  setQuestionSpeaking(true);
 
   const nativeTts = window.AndroidTTS;
 
@@ -433,7 +437,7 @@ Please take your time. I am listening.
       setTimeout(() => {
         if (mountedRef.current) {
           setStatus(
-            "I'm listening. Take your time."
+            "Your turn to answer."
           );
 
           startRecording();
@@ -495,7 +499,7 @@ Please take your time. I am listening.
     }
 
     setStatus(
-      "I'm listening. Take your time."
+      "Your turn to answer."
     );
 
     setTimeout(() => {
@@ -759,7 +763,6 @@ Thanks for explaining that. I would like to ask a follow-up question.
 
 ${followUp}
 
-Please take your time. I am listening.
 `);
 
         return;
@@ -1182,6 +1185,8 @@ formData.append(
     recorderRef.current =
       recorder;
 
+    setQuestionSpeaking(false);
+
     recordingStartedAtRef.current =
       Date.now();
 
@@ -1192,7 +1197,7 @@ formData.append(
 
       setStatus(
         canAutoSubmit
-          ? "I'm listening. Take your time."
+          ? "Your turn to answer."
           : "Recording your answer. Tap Submit answer when you are done."
       );
 
@@ -1692,23 +1697,7 @@ ttsChunkIdRef.current = 0;
 
         <h1>{prompt}</h1>
 
-        <p className="listening-help">
-          {canAutoSubmit
-            ? "I am listening. Your answer will be submitted automatically after 3 seconds of silence."
-            : "Tap Submit answer when you finish speaking."}
-        </p>
       </section>
-
-      {/* Recording indicator */}
-      {recording && (
-        <div className="live-recording-state">
-          <span className="pulse-dot" />
-
-          <span>
-            I'm listening. Take your time.
-          </span>
-        </div>
-      )}
 
       {/* Manual submit */}
       {recording &&
@@ -1726,12 +1715,17 @@ ttsChunkIdRef.current = 0;
       {processingAnswer &&
         !recording && (
           <div className="answer-processing">
-            <div className="loading-spinner" />
+            <div className="processing-visual" aria-hidden="true">
+              <span className="processing-ring" />
+              <span className="processing-bars">
+                <i /><i /><i /><i /><i />
+              </span>
+            </div>
 
             <p>
-              Your answer is being
-              analyzed...
+              Processing your answer...
             </p>
+            <small>Please wait while we analyze your response.</small>
           </div>
         )}
 
@@ -1790,6 +1784,27 @@ ttsChunkIdRef.current = 0;
           {interview.questions.length}
         </span>
       </div>
+
+      {!processingAnswer && (
+        <div
+          className={
+            questionSpeaking
+              ? "interview-orb-shell speaking"
+              : "interview-orb-shell listening"
+          }
+          aria-label={
+            questionSpeaking
+              ? "Question is being read"
+              : "Your turn to answer"
+          }
+        >
+          <span className="interview-orbit interview-orbit-inner" />
+          <span className="interview-orbit interview-orbit-outer" />
+          <span className="interview-orb-core" aria-hidden="true">
+            <i /><i /><i /><i /><i />
+          </span>
+        </div>
+      )}
     </main>
   );
 }

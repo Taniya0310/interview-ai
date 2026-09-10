@@ -1,17 +1,49 @@
 const API =
-  import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+  import.meta.env.VITE_API_URL ||
+  "http://13.234.2.94:4000/api";
 
 export async function api(path, options = {}) {
-  const response = await fetch(`${API}${path}`, options);
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken");
+
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "Cache-Control": "no-cache",
+
+      ...(options.body instanceof FormData
+        ? {}
+        : { "Content-Type": "application/json" }),
+
+      ...(token
+        ? { Authorization: `Bearer ${token}` }
+        : {}),
+
+      ...(options.headers || {}),
+    },
+  });
+
+  if (response.status === 304) {
+    throw new Error(
+      "The server returned cached results. Please try again."
+    );
+  }
 
   if (!response.ok) {
-    let message = 'Request failed';
+    let message = "Request failed";
 
     try {
       const data = await response.json();
-      message = data.error || message;
+
+      message =
+        data.message ||
+        data.error ||
+        `Request failed with status ${response.status}`;
     } catch {
-      // Ignore invalid error response bodies.
+      message = `Request failed with status ${response.status}`;
     }
 
     throw new Error(message);

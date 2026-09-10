@@ -17,37 +17,97 @@ const occupationOptions = [
 
 const domainOptions = [
   {
-    value: "software_developer",
-    label: "Software Developer"
+    value: "computer_science_it",
+    label: "Computer Science & IT",
   },
   {
-    value: "data_science",
-    label: "Data Science"
+    value: "business_management",
+    label: "Business & Management",
   },
   {
-    value: "ai_ml",
-    label: "AI / Machine Learning"
+    value: "finance_banking",
+    label: "Finance & Banking",
   },
   {
-    value: "cybersecurity",
-    label: "Cybersecurity"
+    value: "commerce_accounting",
+    label: "Commerce & Accounting",
   },
   {
-    value: "cloud_devops",
-    label: "Cloud / DevOps"
+    value: "marketing_sales_customer_service",
+    label: "Marketing, Sales & Customer Service",
   },
   {
-    value: "testing_qa",
-    label: "Testing / QA"
+    value: "human_resources",
+    label: "Human Resources",
   },
   {
-    value: "database",
-    label: "Database"
+    value: "operations_supply_chain",
+    label: "Operations & Supply Chain",
   },
   {
-    value: "networking",
-    label: "Networking"
-  }
+    value: "science_research",
+    label: "Science & Research",
+  },
+  {
+    value: "agribusiness",
+    label: "Agribusiness",
+  },
+  {
+    value: "food_technology",
+    label: "Food Technology",
+  },
+  {
+    value: "healthcare",
+    label: "Healthcare",
+  },
+  {
+    value: "pharmacy",
+    label: "Pharmacy",
+  },
+  {
+    value: "law_legal_services",
+    label: "Law / Legal Services",
+  },
+  {
+    value: "media_journalism",
+    label: "Media & Journalism",
+  },
+  {
+    value: "ui_ux_design",
+    label: "UI/UX Design",
+  },
+  {
+    value: "architecture",
+    label: "Architecture",
+  },
+  {
+    value: "education_training",
+    label: "Education & Training",
+  },
+  {
+    value: "hospitality_tourism",
+    label: "Hospitality & Tourism",
+  },
+  {
+    value: "aviation",
+    label: "Aviation",
+  },
+  {
+    value: "automotive",
+    label: "Automotive",
+  },
+  {
+    value: "industrial_manufacturing",
+    label: "Industrial Manufacturing",
+  },
+  {
+    value: "sustainability",
+    label: "Sustainability",
+  },
+  {
+    value: "public_services",
+    label: "Public Services",
+  },
 ];
 
 export default function ProfilePage() {
@@ -174,7 +234,7 @@ export default function ProfilePage() {
   const selectedDomain =
     domainOptions.find(
       (option) => option.value === domain
-    )?.label || "Select technical domain";
+    )?.label || "Select domain";
 
   if (loading) {
     return (
@@ -302,10 +362,10 @@ export default function ProfilePage() {
                 })}
               </div>
             )}
-          </div>
+          </div> 
 
           <label htmlFor="domain">
-            Technical domain
+            Select Domain
           </label>
 
           <div className="custom-select">
