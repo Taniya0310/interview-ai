@@ -12,7 +12,7 @@ import {
   updateDomain,
   deleteDomain,
 } from "../services/domainService";
-
+import ConfirmDialog from "../components/ConfirmDialog";
 export default function QuestionsPage({
   onBack,
   onCreate,
@@ -44,7 +44,15 @@ export default function QuestionsPage({
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
+const [page, setPage] = useState(1);
+const [limit] = useState(10);
 
+const [pagination, setPagination] = useState({
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 1,
+});
 
   const [showBulkUploadModal, setShowBulkUploadModal] =
   useState(false);
@@ -58,46 +66,68 @@ const [bulkForm, setBulkForm] = useState({
   domain_id: "",
   category_id: "",
 });
-
+const [bulkPreview, setBulkPreview] = useState(null);
+const [previewLoading, setPreviewLoading] =
+  useState(false);
 const [bulkUploading, setBulkUploading] = useState(false);
 const [bulkUploadError, setBulkUploadError] = useState("");
-  async function loadData() {
-    setLoading(true);
-    setError("");
+  
+const [confirmDialog, setConfirmDialog] =
+  useState({
+    open: false,
+    title: "",
+    message: "",
+    action: null,
+    danger: false,
+  });
+async function loadData() {
+  setLoading(true);
+  setError("");
 
-    try {
-      const [
-        questionsResponse,
-        domainsResponse,
-        categoriesResponse,
-      ] = await Promise.all([
-        adminRequest("/questions"),
-        getDomains(),
-        getCategories(),
-      ]);
+  try {
+    const [
+      questionsResponse,
+      domainsResponse,
+      categoriesResponse,
+    ] = await Promise.all([
+      adminRequest(
+        `/questions?page=${page}&limit=${limit}`
+      ),
+      getDomains(),
+      getCategories(),
+    ]);
 
-      const questionList = Array.isArray(questionsResponse)
-        ? questionsResponse
-        : questionsResponse?.questions || [];
+    const questionList = Array.isArray(questionsResponse)
+      ? questionsResponse
+      : questionsResponse?.questions || [];
 
-      setQuestions(
-        questionList.filter(
-          (question) => question.is_active !== false
-        )
-      );
+    setQuestions(
+      questionList.filter(
+        (question) => question.is_active !== false
+      )
+    );
 
-      setDomains(domainsResponse || []);
-      setCategories(categoriesResponse || []);
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
+    setPagination(
+      questionsResponse?.pagination || {
+        page,
+        limit,
+        total: questionList.length,
+        totalPages: 1,
+      }
+    );
+
+    setDomains(domainsResponse || []);
+    setCategories(categoriesResponse || []);
+  } catch (requestError) {
+    setError(requestError.message);
+  } finally {
+    setLoading(false);
   }
+}
 
-  useEffect(() => {
-    loadData();
-  }, []);
+ useEffect(() => {
+  loadData();
+}, [page]);
 
   function getType(question) {
     return (
@@ -176,10 +206,95 @@ const [bulkUploadError, setBulkUploadError] = useState("");
     setItemDescription("");
   }
 
+function downloadCsvTemplate() {
+  const csvContent = [
+    "question,expected_topics,reference_answer,answer_keypoints",
+    '"What is React?","components,hooks","React is a JavaScript UI library","component-based,virtual DOM"',
+  ].join("\n");
 
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "questions-template.csv";
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+function askDeleteQuestion(question) {
+  setConfirmDialog({
+    open: true,
+    title: "Delete question?",
+    message:
+      "This question will be deactivated. Do you want to continue?",
+    danger: true,
+    action: () => deleteQuestion(question.id),
+  });
+}
+async function previewBulkQuestions() {
+  if (!bulkFile) {
+    setBulkUploadError("Please select a CSV file.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", bulkFile);
+
+  setPreviewLoading(true);
+  setBulkUploadError("");
+  setBulkPreview(null);
+
+  try {
+    const result = await adminRequest(
+      "/questions/bulk-preview",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    setBulkPreview(result);
+  } catch (requestError) {
+    setBulkUploadError(
+      requestError.message ||
+        "Preview failed.",
+    );
+  } finally {
+    setPreviewLoading(false);
+  }
+}
  async function uploadQuestionsInBulk(event) {
   event.preventDefault();
+if (!bulkPreview) {
+  setBulkUploadError(
+    "Please preview the CSV before uploading.",
+  );
+  return;
+}
 
+if (
+  bulkPreview.invalidRows > 0 ||
+  bulkPreview.duplicateRows > 0
+) {
+  setBulkUploadError(
+    "Fix invalid or duplicate rows before uploading.",
+  );
+  return;
+}
+
+const confirmed = window.confirm(
+  `Upload ${bulkPreview.validRows} valid questions?`,
+);
+
+if (!confirmed) {
+  return;
+}
   if (!bulkFile) {
     setBulkUploadError("Please select a CSV file.");
     return;
@@ -234,7 +349,7 @@ const [bulkUploadError, setBulkUploadError] = useState("");
 
     setShowBulkUploadModal(false);
     setBulkFile(null);
-
+setBulkPreview(null);
     setBulkForm({
       interview_type: "interview",
       difficulty: "beginner",
@@ -349,13 +464,14 @@ async function deleteQuestion(questionId) {
     setDeletingId(null);
   }
 }
-  function clearFilters() {
-    setSearch("");
-    setTypeFilter("all");
-    setDifficultyFilter("all");
-    setDomainFilter("all");
-    setCategoryFilter("all");
-  }
+ function clearFilters() {
+  setSearch("");
+  setTypeFilter("all");
+  setDifficultyFilter("all");
+  setDomainFilter("all");
+  setCategoryFilter("all");
+  setPage(1);
+}
 
   return (
     <main className="admin-page">
@@ -412,6 +528,7 @@ async function deleteQuestion(questionId) {
   onClick={() => {
   setBulkUploadError("");
   setBulkUploadSuccess("");
+  setBulkPreview(null);
   setShowBulkUploadModal(true);
 }}
 >
@@ -571,7 +688,7 @@ async function deleteQuestion(questionId) {
                   <button
                     type="button"
                     className="delete-button"
-                   onClick={() => deleteQuestion(question.id)}
+                   onClick={() => askDeleteQuestion(question)}
                   >
                     Delete
                   </button>
@@ -580,6 +697,40 @@ async function deleteQuestion(questionId) {
             ))}
           </section>
         )}
+
+        {pagination.totalPages > 1 && (
+  <div className="pagination-controls">
+    <button
+      type="button"
+      className="admin-secondary-button"
+      disabled={page === 1 || loading}
+      onClick={() =>
+        setPage((currentPage) => currentPage - 1)
+      }
+    >
+      Previous
+    </button>
+
+    <span>
+      Page {pagination.page} of{" "}
+      {pagination.totalPages}
+    </span>
+
+    <button
+      type="button"
+      className="admin-secondary-button"
+      disabled={
+        page === pagination.totalPages || loading
+      }
+      onClick={() =>
+        setPage((currentPage) => currentPage + 1)
+      }
+    >
+      Next
+    </button>
+  </div>
+)}
+
 <BulkUploadModal
   open={showBulkUploadModal}
   onClose={() => setShowBulkUploadModal(false)}
@@ -592,6 +743,10 @@ async function deleteQuestion(questionId) {
   error={bulkUploadError}
   uploading={bulkUploading}
   onSubmit={uploadQuestionsInBulk}
+  onDownloadTemplate={downloadCsvTemplate}
+  onPreview={previewBulkQuestions}
+  preview={bulkPreview}
+  previewLoading={previewLoading}
 />
         <ListManager
           open={showDomainModal}
@@ -635,6 +790,36 @@ async function deleteQuestion(questionId) {
           saving={saving}
         />
       </div>
+      <ConfirmDialog
+  open={confirmDialog.open}
+  title={confirmDialog.title}
+  message={confirmDialog.message}
+  danger={confirmDialog.danger}
+  onCancel={() =>
+    setConfirmDialog({
+      open: false,
+      title: "",
+      message: "",
+      action: null,
+      danger: false,
+    })
+  }
+  onConfirm={async () => {
+    const action = confirmDialog.action;
+
+    setConfirmDialog({
+      open: false,
+      title: "",
+      message: "",
+      action: null,
+      danger: false,
+    });
+
+    if (action) {
+      await action();
+    }
+  }}
+/>
     </main>
   );
 }
@@ -794,6 +979,10 @@ function BulkUploadModal({
   error,
   uploading,
   onSubmit,
+  onDownloadTemplate,
+  onPreview,
+  preview,
+  previewLoading,
 }) {
   if (!open) return null;
 
@@ -904,7 +1093,24 @@ function BulkUploadModal({
               </option>
             ))}
           </select>
+<button
+  type="button"
+  className="admin-secondary-button"
+  onClick={onDownloadTemplate}
+>
+  Download CSV Template
+</button>
 
+<button
+  type="button"
+  className="admin-secondary-button"
+  onClick={onPreview}
+  disabled={!file || previewLoading || uploading}
+>
+  {previewLoading
+    ? "Previewing..."
+    : "Preview CSV"}
+</button>
           <input
             type="file"
             accept=".csv,text/csv"
@@ -920,7 +1126,44 @@ function BulkUploadModal({
             question, expected_topics, reference_answer,
             answer_keypoints
           </small>
+{preview && (
+  <div className="bulk-preview">
+    <h3>CSV Preview</h3>
 
+    <p>Total rows: {preview.totalRows}</p>
+    <p>Valid rows: {preview.validRows}</p>
+    <p>Invalid rows: {preview.invalidRows}</p>
+    <p>Duplicate rows: {preview.duplicateRows}</p>
+
+    {preview.errors?.length > 0 && (
+      <div className="admin-message admin-message-error">
+        {preview.errors.map((item) => (
+          <p
+            key={`${item.row}-${item.field}`}
+          >
+            Row {item.row}, {item.field}:{" "}
+            {item.message}
+          </p>
+        ))}
+      </div>
+    )}
+
+    <div className="bulk-preview-rows">
+      {preview.rows?.map((row) => (
+        <div
+          key={row.row}
+          className={`bulk-preview-row ${row.status}`}
+        >
+          <strong>Row {row.row}</strong>
+          <span>
+            {row.question || "Empty question"}
+          </span>
+          <span>{row.status}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
           {error && (
             <div className="admin-message admin-message-error">
               {error}

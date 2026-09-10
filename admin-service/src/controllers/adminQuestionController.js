@@ -1,11 +1,64 @@
 const questionManagementService = require("../services/questionManagementService");
+const auditLogService = require("../services/auditLogService");
 
+function getAdminId(req) {
+  return req.admin?.id || req.user?.id || null;
+}
+
+function getRequestDetails(req) {
+  return {
+    ipAddress: req.ip,
+    userAgent: req.get("user-agent"),
+  };
+}
+async function previewBulkQuestions(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "CSV file is required",
+      });
+    }
+
+    const preview =
+      await questionManagementService.previewBulkQuestions(
+        req.file.buffer,
+      );
+
+    res.json(preview);
+  } catch (error) {
+    console.error(
+      "Bulk question preview error:",
+      error,
+    );
+
+    res.status(error.statusCode || 400).json({
+      message:
+        error.message || "Bulk preview failed",
+    });
+  }
+}
 async function getQuestions(req, res) {
   try {
-    const questions =
-      await questionManagementService.listQuestions();
+    const page = Math.max(
+      Number.parseInt(req.query.page, 10) || 1,
+      1,
+    );
 
-    res.json({ questions });
+    const limit = Math.min(
+      Math.max(
+        Number.parseInt(req.query.limit, 10) || 20,
+        1,
+      ),
+      100,
+    );
+
+    const result =
+      await questionManagementService.listQuestions({
+        page,
+        limit,
+      });
+
+    res.json(result);
   } catch (error) {
     console.error("Admin questions error:", error);
 
@@ -14,13 +67,23 @@ async function getQuestions(req, res) {
     });
   }
 }
-
 async function createQuestion(req, res) {
   try {
     const question =
       await questionManagementService.createQuestion(
         req.body
       );
+
+    await auditLogService.createAuditLog({
+      adminId: getAdminId(req),
+      action: "CREATE",
+      entityType: "question",
+      entityId: question.id,
+      details: {
+        text: question.text,
+      },
+      ...getRequestDetails(req),
+    });
 
     res.status(201).json({ question });
   } catch (error) {
@@ -50,6 +113,17 @@ async function bulkUploadQuestions(req, res) {
         categoryId: req.body.category_id,
       });
 
+    await auditLogService.createAuditLog({
+      adminId: getAdminId(req),
+      action: "BULK_UPLOAD",
+      entityType: "question",
+      details: {
+        fileName: req.file.originalname,
+        insertedCount: result.insertedCount,
+      },
+      ...getRequestDetails(req),
+    });
+
     res.status(201).json(result);
   } catch (error) {
     console.error("Bulk question upload error:", error);
@@ -75,6 +149,17 @@ async function updateQuestion(req, res) {
       });
     }
 
+    await auditLogService.createAuditLog({
+      adminId: getAdminId(req),
+      action: "UPDATE",
+      entityType: "question",
+      entityId: question.id,
+      details: {
+        updatedFields: Object.keys(req.body),
+      },
+      ...getRequestDetails(req),
+    });
+
     res.json({ question });
   } catch (error) {
     console.error("Update question error:", error);
@@ -98,6 +183,17 @@ async function deleteQuestion(req, res) {
       });
     }
 
+    await auditLogService.createAuditLog({
+      adminId: getAdminId(req),
+      action: "DELETE",
+      entityType: "question",
+      entityId: question.id,
+      details: {
+        text: question.text,
+      },
+      ...getRequestDetails(req),
+    });
+
     res.json({
       message: "Question deactivated",
       question,
@@ -117,4 +213,5 @@ module.exports = {
   bulkUploadQuestions,
   updateQuestion,
   deleteQuestion,
+  previewBulkQuestions,
 };

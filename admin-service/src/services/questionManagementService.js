@@ -1,18 +1,45 @@
 const { parse } = require("csv-parse/sync");
 const pool = require("../config/database");
 
-async function listQuestions() {
-  const result = await pool.query(`
+async function listQuestions({
+  page = 1,
+  limit = 20,
+} = {}) {
+  const offset = (page - 1) * limit;
+
+  const countResult = await pool.query(`
+    SELECT COUNT(*)::INTEGER AS total
+    FROM questions
+    WHERE is_active = TRUE
+  `);
+
+  const result = await pool.query(
+    `
     SELECT
       q.*,
       tc.name AS category_name
     FROM questions q
     LEFT JOIN training_categories tc
       ON tc.id = q.category_id
+    WHERE q.is_active = TRUE
     ORDER BY q.created_at DESC
-  `);
+    LIMIT $1
+    OFFSET $2
+    `,
+    [limit, offset],
+  );
 
-  return result.rows;
+  const total = countResult.rows[0].total;
+
+  return {
+    questions: result.rows,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 async function createQuestion(data) {
@@ -48,7 +75,128 @@ async function createQuestion(data) {
 
   return result.rows[0];
 }
+async function previewBulkQuestions(fileBuffer) {
+  const rows = parse(fileBuffer.toString("utf8"), {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  });
 
+  if (rows.length === 0) {
+    const error = new Error("CSV file is empty");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const requiredColumns = [
+    "question",
+    "expected_topics",
+    "reference_answer",
+    "answer_keypoints",
+  ];
+
+  const csvColumns = Object.keys(rows[0]);
+
+  for (const column of requiredColumns) {
+    if (!csvColumns.includes(column)) {
+      const error = new Error(
+        `Missing required CSV column: ${column}`,
+      );
+
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  const existingResult = await pool.query(`
+    SELECT LOWER(TRIM(text)) AS normalized_text
+    FROM questions
+    WHERE is_active = TRUE
+  `);
+
+  const existingQuestions = new Set(
+    existingResult.rows.map(
+      (row) => row.normalized_text,
+    ),
+  );
+
+  const uploadedQuestions = new Set();
+  const previewRows = [];
+  const errors = [];
+
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2;
+    const question = row.question?.trim() || "";
+    const normalizedQuestion = question.toLowerCase();
+
+    let status = "valid";
+    let rowError = null;
+
+    if (!question) {
+      status = "invalid";
+      rowError = {
+        row: rowNumber,
+        field: "question",
+        message: "Question is required",
+      };
+    } else if (
+      existingQuestions.has(normalizedQuestion)
+    ) {
+      status = "duplicate";
+      rowError = {
+        row: rowNumber,
+        field: "question",
+        message:
+          "This question already exists",
+      };
+    } else if (
+      uploadedQuestions.has(normalizedQuestion)
+    ) {
+      status = "duplicate";
+      rowError = {
+        row: rowNumber,
+        field: "question",
+        message:
+          "Duplicate question in this CSV",
+      };
+    }
+
+    if (rowError) {
+      errors.push(rowError);
+    }
+
+    if (question) {
+      uploadedQuestions.add(normalizedQuestion);
+    }
+
+    previewRows.push({
+      row: rowNumber,
+      question,
+      expected_topics:
+        row.expected_topics || "",
+      reference_answer:
+        row.reference_answer || "",
+      answer_keypoints:
+        row.answer_keypoints || "",
+      status,
+    });
+  });
+
+  return {
+    totalRows: rows.length,
+    validRows: previewRows.filter(
+      (row) => row.status === "valid",
+    ).length,
+    invalidRows: previewRows.filter(
+      (row) => row.status === "invalid",
+    ).length,
+    duplicateRows: previewRows.filter(
+      (row) => row.status === "duplicate",
+    ).length,
+    errors,
+    rows: previewRows,
+  };
+}
 async function bulkUploadQuestions({
   fileBuffer,
   interviewType,
@@ -249,6 +397,7 @@ async function deactivateQuestion(id) {
 module.exports = {
   listQuestions,
   createQuestion,
+  previewBulkQuestions,
   bulkUploadQuestions,
   updateQuestion,
   deactivateQuestion,

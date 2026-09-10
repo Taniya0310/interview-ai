@@ -13,32 +13,95 @@ function formatDate(value) {
   });
 }
 
+function formatStatus(status) {
+  return String(status || "not_started")
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase(),
+    );
+}
+
+function getAnalysisSummary(interview) {
+  const summary = {
+    completed: 0,
+    processing: 0,
+    failed: 0,
+    not_started: 0,
+    total: 0,
+  };
+
+  interview?.questions?.forEach((question) => {
+    question.answers?.forEach((answer) => {
+      summary.total += 1;
+
+      const status =
+        answer.analysis?.status || "not_started";
+
+      if (summary[status] !== undefined) {
+        summary[status] += 1;
+      } else {
+        summary.not_started += 1;
+      }
+    });
+  });
+
+  return summary;
+}
+
 export default function InterviewsPage() {
   const [interviews, setInterviews] = useState([]);
-  const [selectedInterview, setSelectedInterview] = useState(null);
+  const [selectedInterview, setSelectedInterview] =
+    useState(null);
+
   const [loading, setLoading] = useState(true);
-  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsLoading, setDetailsLoading] =
+    useState(false);
   const [error, setError] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
 
   useEffect(() => {
     async function loadInterviews() {
-      try {
-        const data = await getInterviews();
+      setLoading(true);
+      setError("");
 
-        setInterviews(
-          Array.isArray(data)
-            ? data
-            : data.interviews || []
+      try {
+        const data = await getInterviews({
+          page,
+          limit,
+        });
+
+        const interviewList = Array.isArray(data)
+          ? data
+          : data?.interviews || [];
+
+        setInterviews(interviewList);
+
+        setPagination(
+          data?.pagination || {
+            page,
+            limit,
+            total: interviewList.length,
+            totalPages: 1,
+          },
         );
-      } catch (error) {
-        setError(error.message);
+      } catch (requestError) {
+        setError(requestError.message);
       } finally {
         setLoading(false);
       }
     }
 
     loadInterviews();
-  }, []);
+  }, [page, limit]);
 
   async function handleViewInterview(interviewId) {
     try {
@@ -47,12 +110,15 @@ export default function InterviewsPage() {
 
       const data = await getInterviewById(interviewId);
       setSelectedInterview(data.interview);
-    } catch (error) {
-      setError(error.message);
+    } catch (requestError) {
+      setError(requestError.message);
     } finally {
       setDetailsLoading(false);
     }
   }
+
+  const analysisSummary =
+    getAnalysisSummary(selectedInterview);
 
   return (
     <section className="admin-page">
@@ -60,6 +126,9 @@ export default function InterviewsPage() {
         <div>
           <p>Interview management</p>
           <h1>Interviews</h1>
+          <span>
+            {pagination.total} total interviews
+          </span>
         </div>
       </header>
 
@@ -67,57 +136,115 @@ export default function InterviewsPage() {
 
       {error && <p className="error">{error}</p>}
 
-      {detailsLoading && <p>Loading interview details...</p>}
+      {detailsLoading && (
+        <p>Loading interview details...</p>
+      )}
 
       {!loading && !error && (
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Interview ID</th>
-                <th>User ID</th>
-                <th>Type</th>
-                <th>Role</th>
-                <th>Difficulty</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+        <>
+          <div className="admin-table-wrapper">
+            {interviews.length === 0 ? (
+              <p className="admin-empty">
+                No interviews found.
+              </p>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Interview ID</th>
+                    <th>User ID</th>
+                    <th>Type</th>
+                    <th>Role</th>
+                    <th>Difficulty</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
 
-            <tbody>
-              {interviews.map((interview) => (
-                <tr key={interview.id}>
-                  <td>{interview.id}</td>
-                  <td>{interview.user_id || "—"}</td>
-                  <td>{interview.interview_type || "—"}</td>
-                  <td>{interview.role || "—"}</td>
-                  <td>{interview.difficulty || "—"}</td>
+                <tbody>
+                  {interviews.map((interview) => (
+                    <tr key={interview.id}>
+                      <td>{interview.id}</td>
+                      <td>{interview.user_id || "—"}</td>
+                      <td>
+                        {interview.interview_type || "—"}
+                      </td>
+                      <td>{interview.role || "—"}</td>
+                      <td>
+                        {interview.difficulty || "—"}
+                      </td>
 
-                  <td>
-                    <span className="status-badge">
-                      {interview.status || "Unknown"}
-                    </span>
-                  </td>
+                      <td>
+                        <span className="status-badge">
+                          {formatStatus(
+                            interview.status,
+                          )}
+                        </span>
+                      </td>
 
-                  <td>{formatDate(interview.created_at)}</td>
+                      <td>
+                        {formatDate(interview.created_at)}
+                      </td>
 
-                  <td>
-                    <button
-                      type="button"
-                      className="admin-table-action"
-                      onClick={() =>
-                        handleViewInterview(interview.id)
-                      }
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      <td>
+                        <button
+                          type="button"
+                          className="admin-table-action"
+                          onClick={() =>
+                            handleViewInterview(
+                              interview.id,
+                            )
+                          }
+                        >
+                          View analytics
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {pagination.totalPages > 1 && (
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="admin-secondary-button"
+                disabled={page === 1 || loading}
+                onClick={() =>
+                  setPage(
+                    (currentPage) => currentPage - 1,
+                  )
+                }
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {pagination.page} of{" "}
+                {pagination.totalPages}
+              </span>
+
+              <button
+                type="button"
+                className="admin-secondary-button"
+                disabled={
+                  page === pagination.totalPages ||
+                  loading
+                }
+                onClick={() =>
+                  setPage(
+                    (currentPage) => currentPage + 1,
+                  )
+                }
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {selectedInterview && (
@@ -127,7 +254,9 @@ export default function InterviewsPage() {
         >
           <div
             className="admin-modal interview-details-modal"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) =>
+              event.stopPropagation()
+            }
           >
             <button
               type="button"
@@ -137,7 +266,7 @@ export default function InterviewsPage() {
               ×
             </button>
 
-            <h2>Interview Details</h2>
+            <h2>Interview Analytics</h2>
 
             <div className="admin-details-grid">
               <Detail
@@ -166,120 +295,278 @@ export default function InterviewsPage() {
               />
 
               <Detail
-                label="Status"
-                value={selectedInterview.status}
+                label="Interview status"
+                value={formatStatus(
+                  selectedInterview.status,
+                )}
               />
 
               <Detail
                 label="Created at"
-                value={formatDate(selectedInterview.created_at)}
+                value={formatDate(
+                  selectedInterview.created_at,
+                )}
               />
 
               <Detail
                 label="Completed at"
-                value={formatDate(selectedInterview.completed_at)}
+                value={formatDate(
+                  selectedInterview.completed_at,
+                )}
               />
             </div>
 
+            <section className="interview-analytics">
+              <div className="analytics-header">
+                <div>
+                  <p>GEMINI ANALYTICS</p>
+                  <h3>Analysis processing status</h3>
+                </div>
+
+                <strong>
+                  {analysisSummary.total} answers
+                </strong>
+              </div>
+
+              <div className="analytics-cards">
+                <AnalyticsCard
+                  label="Completed"
+                  value={analysisSummary.completed}
+                  tone="completed"
+                />
+
+                <AnalyticsCard
+                  label="Processing"
+                  value={analysisSummary.processing}
+                  tone="processing"
+                />
+
+                <AnalyticsCard
+                  label="Failed"
+                  value={analysisSummary.failed}
+                  tone="failed"
+                />
+
+                <AnalyticsCard
+                  label="Not started"
+                  value={analysisSummary.not_started}
+                  tone="not-started"
+                />
+              </div>
+
+              <div className="analytics-chart">
+                <h4>Gemini analysis distribution</h4>
+
+                <AnalyticsBar
+                  label="Completed"
+                  value={analysisSummary.completed}
+                  total={analysisSummary.total}
+                  tone="completed"
+                />
+
+                <AnalyticsBar
+                  label="Processing"
+                  value={analysisSummary.processing}
+                  total={analysisSummary.total}
+                  tone="processing"
+                />
+
+                <AnalyticsBar
+                  label="Failed"
+                  value={analysisSummary.failed}
+                  total={analysisSummary.total}
+                  tone="failed"
+                />
+
+                <AnalyticsBar
+                  label="Not started"
+                  value={analysisSummary.not_started}
+                  total={analysisSummary.total}
+                  tone="not-started"
+                />
+              </div>
+            </section>
+
             <h3 className="interview-section-title">
-              Questions and Answers
+              Question-by-question analytics
             </h3>
 
             {!selectedInterview.questions ||
             selectedInterview.questions.length === 0 ? (
-              <p>No questions found for this interview.</p>
+              <p>No questions found.</p>
             ) : (
               <div className="interview-questions">
-                {selectedInterview.questions.map((question) => (
-                  <div
-                    className="interview-question-card"
-                    key={question.interview_question_id}
-                  >
-                    <h4>
-                      Question {question.position}
-                    </h4>
-
-                    <p>
-                      {question.question_text || "No question text"}
-                    </p>
-
-                    <Detail
-                      label="Follow-up count"
-                      value={question.follow_up_count}
-                    />
-
-                    <Detail
-                      label="Satisfied"
-                      value={
-                        question.is_satisfied
-                          ? "Yes"
-                          : "No"
+                {selectedInterview.questions.map(
+                  (question) => (
+                    <div
+                      className="interview-question-card"
+                      key={
+                        question.interview_question_id
                       }
-                    />
+                    >
+                      <h4>
+                        Question {question.position}
+                      </h4>
 
-                    <h5>Answers</h5>
+                      <p>
+                        {question.question_text ||
+                          "No question text"}
+                      </p>
 
-                    {!question.answers ||
-                    question.answers.length === 0 ? (
-                      <p>No answers found.</p>
-                    ) : (
-                      question.answers.map((answer) => (
-                        <div
-                          className="interview-answer-card"
-                          key={answer.answer_id}
-                        >
-                          <Detail
-                            label="Answer status"
-                            value={answer.status}
-                          />
+                      <Detail
+                        label="Expected topics"
+                        value={
+                          Array.isArray(
+                            question.expected_topics,
+                          )
+                            ? question.expected_topics.join(
+                                ", ",
+                              )
+                            : question.expected_topics
+                        }
+                      />
 
-                          <Detail
-                            label="Answer type"
-                            value={
-                              answer.is_follow_up
-                                ? "Follow-up"
-                                : "Main answer"
-                            }
-                          />
+                      <Detail
+                        label="Follow-up count"
+                        value={question.follow_up_count}
+                      />
 
-                          <Detail
-                            label="Created at"
-                            value={formatDate(answer.created_at)}
-                          />
+                      <Detail
+                        label="Satisfied"
+                        value={
+                          question.is_satisfied
+                            ? "Yes"
+                            : "No"
+                        }
+                      />
 
-                          {answer.error_message && (
-                            <Detail
-                              label="Error"
-                              value={answer.error_message}
-                            />
-                          )}
+                      <h5>Answers and Gemini analysis</h5>
 
-                          {answer.analysis && (
-  <div className="interview-analysis">
-    <h5>Analysis Details</h5>
+                      {!question.answers ||
+                      question.answers.length === 0 ? (
+                        <p>No answers found.</p>
+                      ) : (
+                        question.answers.map(
+                          (answer) => (
+                            <div
+                              className="interview-answer-card"
+                              key={answer.answer_id}
+                            >
+                              <Detail
+                                label="Answer status"
+                                value={formatStatus(
+                                  answer.status,
+                                )}
+                              />
 
-    <div className="analysis-details">
-      <FormattedValue
-        value={answer.analysis.result}
-      />
-    </div>
+                              <Detail
+                                label="Answer type"
+                                value={
+                                  answer.is_follow_up
+                                    ? "Follow-up"
+                                    : "Main answer"
+                                }
+                              />
 
-    <Detail
-      label="Analysis status"
-      value={answer.analysis.status}
-    />
+                              <Detail
+                                label="Answer created"
+                                value={formatDate(
+                                  answer.created_at,
+                                )}
+                              />
 
-    <Detail
-      label="Completed at"
-      value={formatDate(answer.analysis.completed_at)}
-    />
-  </div>
-)}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                ))}
+                              {answer.error_message && (
+                                <div className="analysis-error">
+                                  <strong>
+                                    Answer error
+                                  </strong>
+                                  <p>
+                                    {answer.error_message}
+                                  </p>
+                                </div>
+                              )}
+
+                              {answer.analysis ? (
+                                <div className="interview-analysis">
+                                  <div className="analysis-header">
+                                    <h5>
+                                      Gemini Analysis
+                                    </h5>
+
+                                    <span
+                                      className={`status-badge gemini-status ${
+                                        answer.analysis
+                                          .status ||
+                                        "not_started"
+                                      }`}
+                                    >
+                                      {formatStatus(
+                                        answer.analysis
+                                          .status,
+                                      )}
+                                    </span>
+                                  </div>
+
+                                  <Detail
+                                    label="Analysis created"
+                                    value={formatDate(
+                                      answer.analysis
+                                        .created_at,
+                                    )}
+                                  />
+
+                                  <Detail
+                                    label="Analysis completed"
+                                    value={formatDate(
+                                      answer.analysis
+                                        .completed_at,
+                                    )}
+                                  />
+
+                                  {answer.analysis
+                                    .status ===
+                                    "failed" && (
+                                    <div className="analysis-error">
+                                      <strong>
+                                        Gemini error
+                                      </strong>
+
+                                      <p>
+                                        {answer.error_message ||
+                                          "Analysis failed without an error message."}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {answer.analysis
+                                    .result && (
+                                    <div className="analysis-details">
+                                      <h5>
+                                        Full Gemini result
+                                      </h5>
+
+                                      <FormattedValue
+                                        value={
+                                          answer.analysis
+                                            .result
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="analysis-not-available">
+                                  Gemini analysis has not
+                                  been generated.
+                                </div>
+                              )}
+                            </div>
+                          ),
+                        )
+                      )}
+                    </div>
+                  ),
+                )}
               </div>
             )}
           </div>
@@ -288,6 +575,46 @@ export default function InterviewsPage() {
     </section>
   );
 }
+
+function AnalyticsCard({ label, value, tone }) {
+  return (
+    <div className={`analytics-card ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function AnalyticsBar({
+  label,
+  value,
+  total,
+  tone,
+}) {
+  const percentage = total
+    ? Math.round((value / total) * 100)
+    : 0;
+
+  return (
+    <div className="analytics-bar-row">
+      <div className="analytics-bar-label">
+        <span>{label}</span>
+
+        <strong>
+          {value} ({percentage}%)
+        </strong>
+      </div>
+
+      <div className="analytics-bar-track">
+        <span
+          className={tone}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function FormattedValue({ value }) {
   if (value === null || value === undefined) {
     return <span>Not provided</span>;
@@ -316,7 +643,10 @@ function FormattedValue({ value }) {
   return (
     <div className="formatted-object">
       {Object.entries(value).map(([key, item]) => (
-        <div className="formatted-field" key={key}>
+        <div
+          className="formatted-field"
+          key={key}
+        >
           <span className="formatted-label">
             {formatLabel(key)}
           </span>
@@ -336,12 +666,16 @@ function formatLabel(value) {
     .replace(/([A-Z])/g, " $1")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase(),
+    );
 }
+
 function Detail({ label, value }) {
   return (
     <div className="admin-detail-item">
       <span>{label}</span>
+
       <strong>
         {value === null ||
         value === undefined ||
