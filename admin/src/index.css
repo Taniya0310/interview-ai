@@ -1575,6 +1575,33 @@ a {
   place-items: center;
   font-size: 18px;
   line-height: 1;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.admin-sidebar nav a:nth-child(1) .admin-nav-icon {
+  color: #60a5fa;
+}
+
+.admin-sidebar nav a:nth-child(2) .admin-nav-icon {
+  color: #c084fc;
+}
+
+.admin-sidebar nav a:nth-child(3) .admin-nav-icon {
+  color: #34d399;
+}
+
+.admin-sidebar nav a:nth-child(4) .admin-nav-icon {
+  color: #fbbf24;
+}
+
+.admin-sidebar nav a:nth-child(5) .admin-nav-icon {
+  color: #fb7185;
+}
+
+.admin-sidebar nav a:hover .admin-nav-icon,
+.admin-sidebar nav a.active .admin-nav-icon {
+  transform: scale(1.12);
+  filter: brightness(1.15);
 }
 
 .questions-header .admin-back-button {

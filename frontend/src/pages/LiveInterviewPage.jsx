@@ -16,6 +16,24 @@ async function api(path, options = {}) {
   );
 }
 
+function getFriendlyError(error, fallback) {
+  const message = String(error?.message || error || "").toLowerCase();
+
+  if (message.includes("429") || message.includes("rate limit")) {
+    return "This attempt could not be processed. Please try again to continue your interview.";
+  }
+
+  if (message.includes("audio") || message.includes("tts") || message.includes("speech")) {
+    return "We couldn't prepare the interview audio just now. Please try again, or check your sound and internet connection.";
+  }
+
+  if (message.includes("network") || message.includes("failed to fetch")) {
+    return "We couldn't connect to the interview service. Please check your internet connection and try again.";
+  }
+
+  return fallback;
+}
+
 export default function LiveInterviewPage() {
   const navigate = useNavigate();
 
@@ -157,10 +175,7 @@ const TTS_END_DELAY = 600;
         err
       );
 
-      setError(
-        err?.message ||
-          "Unable to load the interview."
-      );
+      setError(getFriendlyError(err, "We couldn't load your interview. Please try again."));
     }
 
     return () => {
@@ -843,10 +858,7 @@ ${followUp}
         false
       );
 
-      setError(
-        requestError?.message ||
-          "Unable to process your answer."
-      );
+      setError(getFriendlyError(requestError, "We couldn't process your answer. Please try again."));
 
       setStatus(
         "Something went wrong while processing your answer."
@@ -941,10 +953,7 @@ async function quitInterview() {
         return;
       }
 
-      setError(
-        finishError?.message ||
-          "Unable to finish the interview."
-      );
+      setError(getFriendlyError(finishError, "We couldn't finish your interview. Please try again."));
 
       setStatus(
         "Unable to finish the interview. Please try again."
@@ -1171,10 +1180,7 @@ formData.append(
           false
         );
 
-        setError(
-          requestError?.message ||
-            "Unable to upload your answer."
-        );
+        setError(getFriendlyError(requestError, "We couldn't save your answer. Please try again."));
 
         setStatus(
           "Something went wrong. Please try answering again."
@@ -1716,7 +1722,6 @@ ttsChunkIdRef.current = 0;
         !recording && (
           <div className="answer-processing">
             <div className="processing-visual" aria-hidden="true">
-              <span className="processing-ring" />
               <span className="processing-bars">
                 <i /><i /><i /><i /><i />
               </span>

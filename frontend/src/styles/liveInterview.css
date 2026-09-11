@@ -30,24 +30,13 @@
 
 .processing-visual {
   position: relative;
-  width: 142px;
-  height: 142px;
+  width: 100%;
+  height: 118px;
   display: grid;
   place-items: center;
 }
 
-.processing-ring {
-  position: absolute;
-  inset: 8px;
-  border: 8px dotted #fed7c2;
-  border-right-color: #fb7b32;
-  border-bottom-color: #fb7b32;
-  border-radius: 50%;
-  animation: processing-ring-spin 3s linear infinite;
-}
-
 .processing-bars {
-  z-index: 1;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -79,7 +68,6 @@
   font-size: 14px;
 }
 
-@keyframes processing-ring-spin { to { transform: rotate(360deg); } }
 @keyframes processing-bar-pulse {
   0%, 100% { transform: scaleY(.7); opacity: .65; }
   50% { transform: scaleY(1); opacity: 1; }

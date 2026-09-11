@@ -8,6 +8,20 @@ const API =
 async function api(path, options = {}) {
   return authenticatedFetch(path, options);
 }
+
+function getFriendlyResultsError(error) {
+  const message = String(error?.message || error || "").toLowerCase();
+
+  if (message.includes("429") || message.includes("rate limit")) {
+    return "This attempt could not be processed. Please try again to view your results.";
+  }
+
+  if (message.includes("network") || message.includes("failed to fetch")) {
+    return "We couldn't connect to your interview results. Please check your internet connection and try again.";
+  }
+
+  return "We couldn't load your interview results. Please try again.";
+}
 function getQuestionTypeLabel(answer) {
   const isFollowUp =
     answer?.questionType === "follow_up" ||
@@ -364,10 +378,7 @@ export default function ResultsPage() {
         );
 
         if (mounted) {
-          setError(
-            err?.message ||
-              "Unable to load interview results."
-          );
+          setError(getFriendlyResultsError(err));
         }
       } finally {
         if (mounted) {
