@@ -19,6 +19,12 @@ export default function AdminSidebar() {
         <NavLink to="/admin/interviews"><span className="admin-nav-icon" aria-hidden="true">▤</span>Interviews</NavLink>
         <NavLink to="/admin/questions"><span className="admin-nav-icon" aria-hidden="true">☷</span>Questions</NavLink>
         <NavLink to="/admin/settings"><span className="admin-nav-icon" aria-hidden="true">⚙</span>Settings</NavLink>
+        <NavLink to="/admin/token-management">
+  <span className="admin-nav-icon" aria-hidden="true">
+    ◈
+  </span>
+  Token Management
+</NavLink>
       </nav>
 
       <button onClick={handleLogout}>

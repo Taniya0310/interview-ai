@@ -13,9 +13,9 @@ const adminInterviewRoutes = require("./routes/adminInterviewRoutes");
 const adminDomainRoutes = require("./routes/adminDomainRoutes");
 const adminCategoryRoutes = require("./routes/adminCategoryRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
-
+const aiUsageRoutes = require("./routes/aiUsageRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
-
+const adminSettingsRoutes = require("./routes/adminSettingsRoutes");
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -53,12 +53,18 @@ app.use(
   "/api/admin/dashboard",
   adminDashboardRoutes,
 );
-
+app.use(
+  "/api/admin/settings",
+  adminSettingsRoutes
+);
 app.use(
   "/api/admin/users",
   adminUserRoutes,
 );
-
+app.use(
+  "/api/admin/ai-usage",
+  aiUsageRoutes,
+);
 app.use(
   "/api/admin/questions",
   adminQuestionRoutes,

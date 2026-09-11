@@ -6,7 +6,9 @@ const {
 } = require('../config/env');
 
 const logger = require('../utils/logger');
-
+const {
+  recordGeminiUsage,
+} = require("./aiUsageLogger");
 function parseGeminiJson(data) {
   const text =
     data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -25,53 +27,82 @@ async function sendVideoToGemini({
   mimeType,
   prompt,
   timeout = 120000,
+  interviewId = null,
+  userId = null,
+  answerId = null,
+  requestType = "video_analysis",
 }) {
+  const startedAt = Date.now();
+
   if (!fs.existsSync(filePath)) {
     throw new Error(`Video file not found: ${filePath}`);
   }
 
   const videoBuffer = fs.readFileSync(filePath);
-  const videoBase64 = videoBuffer.toString('base64');
+  const videoBase64 = videoBuffer.toString("base64");
 
-  logger.info('Sending video to Gemini', {
+  logger.info("Sending video to Gemini", {
     filePath,
     mimeType,
     bytes: videoBuffer.length,
     model: geminiModel,
   });
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: videoBase64,
+  let response;
+
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType,
+                    data: videoBase64,
+                  },
                 },
-              },
-            ],
-          },
-        ],
-      }),
-      signal: AbortSignal.timeout(timeout),
-    }
-  );
+              ],
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(timeout),
+      }
+    );
+  } catch (error) {
+    await recordGeminiUsage({
+      interviewId,
+      userId,
+      answerId,
+      requestType,
+      model: geminiModel,
+      status: "failed",
+      errorMessage: error.message,
+      latencyMs: Date.now() - startedAt,
+    });
+
+    throw error;
+  }
 
   if (!response.ok) {
     const errorBody = await response.text();
 
-    logger.error('Gemini request failed', {
-      status: response.status,
-      body: errorBody,
+    await recordGeminiUsage({
+      interviewId,
+      userId,
+      answerId,
+      requestType,
+      model: geminiModel,
+      status: "failed",
+      errorMessage: errorBody,
+      latencyMs: Date.now() - startedAt,
     });
 
     const error = new Error(
@@ -83,9 +114,20 @@ async function sendVideoToGemini({
   }
 
   const data = await response.json();
+
+  await recordGeminiUsage({
+    interviewId,
+    userId,
+    answerId,
+    requestType,
+    model: geminiModel,
+    usageMetadata: data.usageMetadata,
+    latencyMs: Date.now() - startedAt,
+  });
+
   const parsed = parseGeminiJson(data);
 
-  logger.info('Gemini response parsed', parsed);
+  logger.info("Gemini response parsed", parsed);
 
   return parsed;
 }
@@ -95,7 +137,13 @@ async function sendAudioToGemini({
   mimeType = "audio/wav",
   prompt,
   timeout = 60000,
+  interviewId = null,
+  userId = null,
+  answerId = null,
+  requestType = "audio_analysis",
 }) {
+  const startedAt = Date.now();
+
   if (!fs.existsSync(filePath)) {
     throw new Error(`Audio file not found: ${filePath}`);
   }
@@ -110,46 +158,83 @@ async function sendAudioToGemini({
     model: geminiModel,
   });
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: audioBase64,
+  let response;
+
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType,
+                    data: audioBase64,
+                  },
                 },
-              },
-            ],
-          },
-        ],
-      }),
-      signal: AbortSignal.timeout(timeout),
-    }
-  );
+              ],
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(timeout),
+      }
+    );
+  } catch (error) {
+    await recordGeminiUsage({
+      interviewId,
+      userId,
+      answerId,
+      requestType,
+      model: geminiModel,
+      status: "failed",
+      errorMessage: error.message,
+      latencyMs: Date.now() - startedAt,
+    });
+
+    throw error;
+  }
 
   if (!response.ok) {
     const errorBody = await response.text();
 
-    logger.error("Gemini audio request failed", {
-      status: response.status,
-      body: errorBody,
+    await recordGeminiUsage({
+      interviewId,
+      userId,
+      answerId,
+      requestType,
+      model: geminiModel,
+      status: "failed",
+      errorMessage: errorBody,
+      latencyMs: Date.now() - startedAt,
     });
 
-    throw new Error(
+    const error = new Error(
       `Gemini audio request failed (${response.status})`
     );
+
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
+
+  await recordGeminiUsage({
+    interviewId,
+    userId,
+    answerId,
+    requestType,
+    model: geminiModel,
+    usageMetadata: data.usageMetadata,
+    latencyMs: Date.now() - startedAt,
+  });
+
   return parseGeminiJson(data);
 }
 async function evaluateAudioAnswer({
@@ -158,7 +243,10 @@ async function evaluateAudioAnswer({
   question,
   expectedTopics = [],
   referenceAnswer = "",
-  answerKeyPoints = []
+  answerKeyPoints = [],
+  interviewId = null,
+  userId = null,
+  answerId = null,
 }) {
   if (!geminiApiKey) {
     return {
@@ -211,16 +299,22 @@ Rules:
 - Score from 0 to 100.
 - Accept different wording with the same meaning.
 - Ask one short follow-up only if the answer is incomplete.
+- If a follow-up question is needed, write it in natural Indian English.
+- Keep it short and easy to speak aloud.
+- Avoid complex words and American expressions.
+- Make it suitable for an Indian English TTS voice.
 `;
 
-  const result =
-    await sendAudioToGemini({
-      filePath,
-      mimeType,
-      prompt,
-      timeout: 60000
-    });
-
+ const result = await sendAudioToGemini({
+  filePath,
+  mimeType,
+  prompt,
+  timeout: 60000,
+  interviewId,
+  userId,
+  answerId,
+  requestType: "audio_analysis",
+});
   const analysis = {
     transcript: result.transcript || "",
     passed: Boolean(result.passed),
@@ -301,6 +395,9 @@ async function evaluateAnswer({
   mimeType,
   question,
   expectedTopics,
+  interviewId = null,
+  userId = null,
+  answerId = null,
 }) {
   if (!geminiApiKey) {
     return {
@@ -328,13 +425,25 @@ Return ONLY valid JSON:
   "followUpQuestion": "string or null",
   "questionFeedback": "short explanation"
 }
+
+Rules:
+- Use natural Indian English wording.
+- Keep the follow-up question short and professional.
+- Use simple words that are easy to pronounce.
+- Avoid American slang and idioms.
+- If no follow-up is needed, return null.
+- Write the follow-up question as it should be spoken aloud by an Indian English TTS voice.
 `;
 
   const result = await evaluateWithRetry({
-    filePath,
-    mimeType,
-    prompt,
-  });
+  filePath,
+  mimeType,
+  prompt,
+  interviewId,
+  userId,
+  answerId,
+  requestType: "answer_analysis",
+});
 
   logger.info('Fast answer evaluation completed', {
     question,
@@ -351,6 +460,9 @@ Return ONLY valid JSON:
 async function transcribeAudio({
   filePath,
   mimeType = "audio/wav",
+  interviewId = null,
+  userId = null,
+  answerId = null,
 }) {
   if (!geminiApiKey) {
     logger.warn("Gemini API key is missing");
@@ -373,11 +485,14 @@ Return:
 `;
 
   const result = await sendAudioToGemini({
-    filePath,
-    mimeType,
-    prompt,
-  });
-
+  filePath,
+  mimeType,
+  prompt,
+  requestType: "transcription",
+  interviewId,
+  userId,
+  answerId,
+});
   const transcript = result.transcript || "";
 
   logger.info("Audio transcript generated", {
@@ -389,39 +504,81 @@ Return:
 async function sendTextToGemini({
   prompt,
   timeout = 60000,
+  interviewId = null,
+  userId = null,
+  answerId = null,
+  requestType = "text_analysis",
 }) {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-      }),
-      signal: AbortSignal.timeout(timeout),
-    }
-  );
+  const startedAt = Date.now();
+
+  let response;
+
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(timeout),
+      }
+    );
+  } catch (error) {
+    await recordGeminiUsage({
+      interviewId,
+      userId,
+      answerId,
+      requestType,
+      model: geminiModel,
+      status: "failed",
+      errorMessage: error.message,
+      latencyMs: Date.now() - startedAt,
+    });
+
+    throw error;
+  }
 
   if (!response.ok) {
     const errorBody = await response.text();
 
-    logger.error("Gemini text request failed", {
-      status: response.status,
-      body: errorBody,
+    await recordGeminiUsage({
+      interviewId,
+      userId,
+      answerId,
+      requestType,
+      model: geminiModel,
+      status: "failed",
+      errorMessage: errorBody,
+      latencyMs: Date.now() - startedAt,
     });
 
-    throw new Error(
+    const error = new Error(
       `Gemini text request failed (${response.status})`
     );
+
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
+
+  await recordGeminiUsage({
+    interviewId,
+    userId,
+    answerId,
+    requestType,
+    model: geminiModel,
+    usageMetadata: data.usageMetadata,
+    latencyMs: Date.now() - startedAt,
+  });
 
   return parseGeminiJson(data);
 }
@@ -429,6 +586,9 @@ async function evaluateTranscript({
   transcript,
   question,
   expectedTopics,
+  interviewId = null,
+  userId = null,
+  answerId = null,
 }) {
   if (!geminiApiKey) {
     return {
@@ -463,12 +623,21 @@ Rules:
 - needsFollowUp must be true or false.
 - Ask a follow-up only when the answer is incomplete, unclear, or incorrect.
 - If the answer is sufficient, return false and followUpQuestion as null.
+- Use natural Indian English wording.
+- Keep the follow-up question short and professional.
+- Use simple words suitable for speech.
+- Avoid American slang, idioms, and difficult pronunciation.
+- Write the question as it should be spoken by an Indian English TTS voice.
 `;
 
-  const result = await sendTextToGemini({
-    prompt,
-    timeout: 60000,
-  });
+const result = await sendTextToGemini({
+  prompt,
+  timeout: 60000,
+  interviewId,
+  userId,
+  answerId,
+  requestType: "transcript_analysis",
+});
 
   logger.info("Transcript evaluated by Gemini", {
     transcript,
@@ -485,6 +654,9 @@ async function analyze({
   question,
   expectedTopics,
   previousAnswers = [],
+  interviewId = null,
+  userId = null,
+  answerId = null,
 }) {
   if (!geminiApiKey) {
     return {
@@ -558,14 +730,23 @@ Return ONLY valid JSON:
 }
 
 All numeric scores must be between 0 and 100.
+Speaking requirements:
+- Use clear, natural Indian English in questionFeedback and feedback.
+- Keep feedback easy to understand when spoken aloud.
+- Avoid American slang and complex words.
+- Keep any suggested follow-up question short and TTS-friendly.
 `;
 
-  const result = await sendVideoToGemini({
-    filePath,
-    mimeType,
-    prompt,
-    timeout: 120000,
-  });
+const result = await sendVideoToGemini({
+  filePath,
+  mimeType,
+  prompt,
+  timeout: 120000,
+  interviewId,
+  userId,
+  answerId,
+  requestType: "video_analysis",
+});
 
   logger.info('Detailed Gemini analysis completed', {
     question,

@@ -18,7 +18,7 @@ import SettingsPage from "./pages/SettingsPage";
 import QuestionsPage from "./pages/QuestionsPage";
 import CreateQuestionPage from "./pages/CreateQuestionPage";
 import EditQuestionPage from "./pages/EditQuestionPage";
-
+import TokenManagementPage from "./pages/TokenManagementPage";
 function QuestionsRoute() {
   const navigate = useNavigate();
 
@@ -107,7 +107,10 @@ export default function App() {
               path="/admin/questions/edit/:id"
               element={<EditQuestionRoute />}
             />
-
+<Route
+  path="/admin/token-management"
+  element={<TokenManagementPage />}
+/>
             <Route
               path="/admin/settings"
               element={<SettingsPage />}

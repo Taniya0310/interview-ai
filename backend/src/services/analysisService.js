@@ -198,13 +198,17 @@ async function runDetailedQuestionAnalysis(
     transcripts,
   });
 
-  const detailed = await gemini.analyze({
-    filePath: firstAnswer.video_path,
-    mimeType: firstAnswer.mime_type || "video/webm",
-    question: firstAnswer.question,
-    expectedTopics: firstAnswer.expected_topics,
-    previousAnswers: transcripts,
-  });
+ const detailed = await gemini.analyze({
+  filePath,
+  mimeType,
+  question,
+  expectedTopics,
+  previousAnswers,
+
+  interviewId,
+  userId,
+  answerId,
+});
 
   logger.info("Detailed question analysis completed", {
     interviewId,

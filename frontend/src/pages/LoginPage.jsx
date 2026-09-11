@@ -23,13 +23,22 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      await sendOtp(email, "login");
+      const normalizedEmail = email.trim().toLowerCase();
 
-      navigate("/verify-otp", {
-        state: {
-          email: email.trim().toLowerCase()
-        }
-      });
+const response = await sendOtp(normalizedEmail, "login");
+
+localStorage.setItem(
+  "otpExpiresAt",
+  response.expiresAt ||
+    new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+);
+
+navigate("/verify-otp", {
+  state: {
+    email: normalizedEmail,
+    mode: "login",
+  },
+});
     } catch (requestError) {
       setError(
         requestError.message ||

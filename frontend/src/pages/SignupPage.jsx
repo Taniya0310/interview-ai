@@ -23,13 +23,22 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
-      await sendOtp(email, "signup");
+     const normalizedEmail = email.trim().toLowerCase();
 
-      navigate("/verify-otp", {
-        state: {
-          email: email.trim().toLowerCase()
-        }
-      });
+const response = await sendOtp(normalizedEmail, "signup");
+
+localStorage.setItem(
+  "otpExpiresAt",
+  response.expiresAt ||
+    new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+);
+
+navigate("/verify-otp", {
+  state: {
+    email: normalizedEmail,
+    mode: "signup",
+  },
+});
     } catch (requestError) {
       setError(
         requestError.message ||
