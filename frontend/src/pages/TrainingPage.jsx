@@ -97,6 +97,8 @@ const ttsRunIdRef = useRef(0);
   }
 
 function clearTtsTimer() {
+  ttsRunIdRef.current += 1;
+
   if (ttsTimerRef.current) {
     clearTimeout(ttsTimerRef.current);
     ttsTimerRef.current = null;
@@ -186,6 +188,8 @@ function speakQuestion() {
 
   clearTtsTimer();
 
+  const currentRunId = ttsRunIdRef.current;
+
   setError("");
   setMessage("Here's your question.");
 
@@ -219,77 +223,74 @@ function speakQuestion() {
       (chunk) => chunk && chunk.trim()
     );
 
-    console.log("[TTS] Full question:", questionText);
-    console.log("[TTS] Total chunks:", validChunks.length);
+    console.log("[Training TTS] Full question:", questionText);
+    console.log(
+      "[Training TTS] Total chunks:",
+      validChunks.length
+    );
 
-    let chunkIndex = 0;
+    // Send every chunk immediately.
+    // Android handles the speech queue.
+    const TTS_START_DELAY = 400;
 
-    function speakNextChunk() {
-      if (!mountedRef.current) {
+setTimeout(() => {
+  if (
+    !mountedRef.current ||
+    currentRunId !== ttsRunIdRef.current
+  ) {
+    return;
+  }
+
+  validChunks.forEach((chunk, index) => {
+    ttsChunkIdRef.current += 1;
+
+    const chunkId = String(
+      ttsChunkIdRef.current
+    );
+
+    console.log("[Training TTS] Chunk sent:", {
+      chunkNumber: index + 1,
+      totalChunks: validChunks.length,
+      chunkId,
+      time: new Date().toISOString(),
+      text: chunk,
+    });
+
+    nativeTts.speakChunk(
+      chunk,
+      chunkId
+    );
+  });
+}, TTS_START_DELAY);
+
+    const wordCount = questionText
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+
+    const estimatedSpeechTime = Math.max(
+      3500,
+      wordCount * 650
+    );
+
+    ttsTimerRef.current = setTimeout(() => {
+      if (
+        !mountedRef.current ||
+        currentRunId !== ttsRunIdRef.current
+      ) {
         return;
       }
 
-      if (chunkIndex >= validChunks.length) {
-        const wordCount = questionText
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean).length;
-
-        const estimatedSpeechTime = Math.max(
-          3500,
-          wordCount * 650
-        );
-
-        console.log(
-          "[TTS] All chunks sent. Waiting:",
-          estimatedSpeechTime,
-          "ms"
-        );
-
-        ttsTimerRef.current = setTimeout(() => {
-          if (!mountedRef.current) {
-            return;
-          }
-
-          console.log(
-            "[TTS] Finished. Starting recording."
-          );
-
-          setMessage(
-            "I'm listening. Take your time."
-          );
-
-          startRecording();
-        }, estimatedSpeechTime);
-
-        return;
-      }
-
-      const chunk = validChunks[chunkIndex];
-
-      ttsChunkIdRef.current += 1;
-
-      console.log("[TTS] Speaking chunk:", {
-        chunkNumber: chunkIndex + 1,
-        totalChunks: validChunks.length,
-        text: chunk,
-      });
-
-      nativeTts.speakChunk(
-        chunk,
-        String(ttsChunkIdRef.current)
+      console.log(
+        "[Training TTS] Finished. Starting recording."
       );
 
-      chunkIndex += 1;
-
-      // Wait before sending the next chunk.
-      ttsTimerRef.current = setTimeout(
-        speakNextChunk,
-        900
+      setMessage(
+        "I'm listening. Take your time."
       );
-    }
 
-    speakNextChunk();
+      startRecording();
+    }, estimatedSpeechTime + TTS_START_DELAY);
   } catch (ttsError) {
     console.error(
       "[TRAINING TTS ERROR]",
@@ -304,28 +305,26 @@ function speakQuestion() {
   }
 }
 
-  useEffect(() => {
-    if (
-      !questionText ||
-      questionText === "No question available."
-    ) {
-      return;
-    }
+ useEffect(() => {
+  if (
+    !questionText ||
+    questionText === "No question available."
+  ) {
+    return;
+  }
 
-    const questionTimer = setTimeout(() => {
-      speakQuestion();
-    }, 300);
+  const questionTimer = setTimeout(() => {
+    speakQuestion();
+  }, 300);
 
-    return () => {
-      clearTimeout(questionTimer);
-      clearTtsTimer();
+  return () => {
+    clearTimeout(questionTimer);
+    clearTtsTimer();
 
-      window.AndroidTTS?.stop?.();
-      window.AndroidTTS?.clearQueue?.();
-
-      ttsChunkerRef.current?.reset?.();
-    };
-  }, [questionText]);
+    window.AndroidTTS?.stop?.();
+    window.AndroidTTS?.clearQueue?.();
+  };
+}, [questionText]);
 
   useEffect(() => {
     return () => {

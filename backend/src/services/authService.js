@@ -147,8 +147,10 @@ async function requestEmailOtp(email, mode = "login") {
   );
 
   return {
-    message: "OTP sent successfully"
-  };
+  message: "OTP sent successfully",
+  expiresAt: expiresAt.toISOString(),
+  expiresInSeconds: 10 * 60,
+};
 }
 
 async function verifyEmailOtp(email, otp) {

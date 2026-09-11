@@ -16,19 +16,33 @@ export async function api(path, options = {}) {
 
       ...(options.body instanceof FormData
         ? {}
-        : { "Content-Type": "application/json" }),
+        : {
+            "Content-Type": "application/json",
+          }),
 
       ...(token
-        ? { Authorization: `Bearer ${token}` }
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
         : {}),
 
       ...(options.headers || {}),
     },
   });
 
+  if (response.status === 401) {
+    window.dispatchEvent(
+      new CustomEvent("auth:expired"),
+    );
+
+    throw new Error(
+      "Your session has expired. Please log in again.",
+    );
+  }
+
   if (response.status === 304) {
     throw new Error(
-      "The server returned cached results. Please try again."
+      "The server returned cached results. Please try again.",
     );
   }
 

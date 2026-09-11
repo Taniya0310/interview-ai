@@ -123,16 +123,18 @@ async function submitAnswer(
     data.file.mimetype ||
     "audio/webm";
 
-  const analysis =
-    await geminiService.evaluateAudioAnswer({
-      filePath: audioPath,
-      mimeType: audioMimeType,
-      question: question.text,
-      referenceAnswer:
-        question.reference_answer || "",
-      expectedTopics:
-        question.answer_key_points || []
-    });
+ const analysis =
+  await geminiService.evaluateAudioAnswer({
+    filePath: audioPath,
+    mimeType: audioMimeType,
+    question: question.text,
+    referenceAnswer:
+      question.reference_answer || "",
+    expectedTopics:
+      question.answer_key_points || [],
+    userId,
+    requestType: "training_audio_analysis",
+  });
 
   const answer =
     await trainingModel.createAnswer(

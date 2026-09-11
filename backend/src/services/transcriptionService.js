@@ -80,15 +80,12 @@ async function evaluateVideoAudio({
 
     await extractAudio(videoPath, audioPath);
 
-    logger.info(
-      "Audio extracted; sending one combined request to Gemini",
-      {
-        audioPath,
-        question,
-        referenceAnswerProvided: Boolean(referenceAnswer),
-        answerKeyPointsCount: answerKeyPoints.length,
-      }
-    );
+    logger.info("Audio extracted; sending one combined request to Gemini", {
+      audioPath,
+      question,
+      referenceAnswerProvided: Boolean(referenceAnswer),
+      answerKeyPointsCount: answerKeyPoints.length,
+    });
 
     const result = await gemini.evaluateAudioAnswer({
       filePath: audioPath,
@@ -97,6 +94,7 @@ async function evaluateVideoAudio({
       expectedTopics,
       referenceAnswer,
       answerKeyPoints,
+      requestType: "interview_audio_analysis",
     });
 
     logger.info("Audio transcription and evaluation completed", {

@@ -12,7 +12,49 @@ function formatDate(value) {
     timeStyle: "short",
   });
 }
+function getStatusClass(status) {
+  const value = String(status || "")
+    .toLowerCase()
+    .replace(/[-_]/g, " ");
 
+  if (
+    [
+      "completed",
+      "complete",
+      "verified",
+      "active",
+      "success",
+      "succeeded",
+    ].includes(value)
+  ) {
+    return "status-success";
+  }
+
+  if (
+    [
+      "failed",
+      "failure",
+      "cancelled",
+      "canceled",
+      "error",
+    ].includes(value)
+  ) {
+    return "status-danger";
+  }
+
+  if (
+    [
+      "processing",
+      "in progress",
+      "pending",
+      "started",
+    ].includes(value)
+  ) {
+    return "status-warning";
+  }
+
+  return "status-neutral";
+}
 function formatStatus(status) {
   return String(status || "not_started")
     .replace(/[-_]/g, " ")
@@ -176,11 +218,13 @@ export default function InterviewsPage() {
                       </td>
 
                       <td>
-                        <span className="status-badge">
-                          {formatStatus(
-                            interview.status,
-                          )}
-                        </span>
+                        <span
+  className={`status-badge ${getStatusClass(
+    interview.status,
+  )}`}
+>
+  {formatStatus(interview.status)}
+</span>
                       </td>
 
                       <td>
@@ -493,13 +537,11 @@ export default function InterviewsPage() {
                                       Gemini Analysis
                                     </h5>
 
-                                    <span
-                                      className={`status-badge gemini-status ${
-                                        answer.analysis
-                                          .status ||
-                                        "not_started"
-                                      }`}
-                                    >
+                                   <span
+  className={`status-badge gemini-status ${getStatusClass(
+    answer.analysis.status,
+  )}`}
+>
                                       {formatStatus(
                                         answer.analysis
                                           .status,
