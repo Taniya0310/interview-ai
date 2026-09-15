@@ -10,7 +10,7 @@ import {
 
 import { createTtsChunker } from "../services/ttsChunker";
 import "../styles/training.css";
-
+import { useSettings } from "../context/SettingsContext";
 import {
   submitTrainingAnswer,
   completeTrainingSession,
@@ -31,7 +31,7 @@ function formatTime(seconds) {
 export default function TrainingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-
+const { settings } = useSettings();
   const session = location.state?.session;
   const questions = location.state?.questions || [];
 
@@ -72,7 +72,9 @@ const ttsRunIdRef = useRef(0);
     question?.text ||
     "No question available.";
 
-  const SILENCE_LIMIT = 3000;
+  const SILENCE_LIMIT = Number(
+  settings.silence_timeout_ms ?? 3000
+);
   const MIN_RECORDING_TIME = 1500;
   const SILENCE_THRESHOLD = 0.015;
 
@@ -205,7 +207,10 @@ function speakQuestion() {
     nativeTts.stop?.();
     nativeTts.clearQueue?.();
 
-    ttsChunkerRef.current = createTtsChunker();
+    ttsChunkerRef.current =
+  createTtsChunker(
+    Number(settings.tts_chunk_size ?? 5)
+  );
     ttsChunkIdRef.current = 0;
 
     const chunks = ttsChunkerRef.current.addText(
@@ -257,9 +262,12 @@ setTimeout(() => {
     });
 
     nativeTts.speakChunk(
-      chunk,
-      chunkId
-    );
+  chunk,
+  chunkId,
+  Number(settings.speech_speed ?? 0.90),
+  Number(settings.speech_pitch ?? 1),
+  Number(settings.speech_volume ?? 1)
+);
   });
 }, TTS_START_DELAY);
 

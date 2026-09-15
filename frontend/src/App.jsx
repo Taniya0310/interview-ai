@@ -36,7 +36,7 @@ import InterviewHistoryPage from "./pages/InterviewHistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import TrainingDeviceCheckPage from "./pages/TrainingDeviceCheckPage";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
-
+import { SettingsProvider } from "./context/SettingsContext";
 function GlobalBottomNav() {
   const location = useLocation();
 
@@ -213,7 +213,9 @@ function App() {
 export default function AppWithAuth() {
   return (
     <AuthProvider>
-      <App />
+      <SettingsProvider>
+        <App />
+      </SettingsProvider>
     </AuthProvider>
   );
 }

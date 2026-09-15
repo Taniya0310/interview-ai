@@ -3,8 +3,14 @@ const gemini = require("./geminiService");
 const scoring = require("../utils/scoring");
 const logger = require("../utils/logger");
 const transcriptionService = require("./transcriptionService");
-
+const settingsService = require("./settingsService");
 async function processFastAnswer(answerId) {
+
+  const settings = await settingsService.getSettings();
+
+const followUpLimit = Number(
+  settings.follow_up_question_limit ?? 2
+);
   const result = await db.query(
     `SELECT
        a.*,
@@ -62,7 +68,7 @@ async function processFastAnswer(answerId) {
 
     const needsFollowUp =
       Boolean(decision.needsFollowUp) &&
-      answer.follow_up_count < 2;
+      answer.follow_up_count < followUpLimit;
 
     const liveResult = {
       transcript,

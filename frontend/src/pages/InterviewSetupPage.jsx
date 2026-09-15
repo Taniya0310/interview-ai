@@ -13,14 +13,18 @@ import {
 } from "lucide-react";
 
 import BottomNav from "../components/BottomNav";
-
+import { useSettings } from "../context/SettingsContext";
 async function api(path, options = {}) {
   return authenticatedFetch(path, options);
 }
 
 export default function InterviewSetupPage() {
   const navigate = useNavigate();
+const { settings } = useSettings();
 
+const interviewDuration = Number(
+  settings.interview_duration_minutes ?? 30
+);
   const [interviewType, setInterviewType] =
     useState("technical");
 
@@ -169,7 +173,7 @@ export default function InterviewSetupPage() {
           </span>
 
           <small>DURATION</small>
-          <strong>15 min</strong>
+          <strong>{interviewDuration} min</strong>
         </div>
 
         <div className="setup-meta-item">
