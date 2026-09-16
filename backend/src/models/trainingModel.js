@@ -90,15 +90,15 @@ async function createAnswer(
     ]
   );
 
- await db.query(
-  `
-    UPDATE training_sessions
-    SET completed_questions =
-      LEAST(completed_questions + 1, total_questions)
-    WHERE id = $1
-  `,
-  [sessionId]
-);
+  await db.query(
+    `
+      UPDATE training_sessions
+      SET completed_questions =
+        LEAST(completed_questions + 1, total_questions)
+      WHERE id = $1
+    `,
+    [sessionId]
+  );
 
   return result.rows[0];
 }
@@ -115,6 +115,8 @@ async function completeSession(
         completed_at = NOW()
       WHERE id = $1
         AND user_id = $2
+        AND status = 'in_progress'
+        AND completed_questions >= total_questions
       RETURNING *
     `,
     [sessionId, userId]
@@ -123,9 +125,75 @@ async function completeSession(
   return result.rows[0] || null;
 }
 
+async function stopSession(
+  sessionId,
+  userId
+) {
+  const result = await db.query(
+    `
+      UPDATE training_sessions
+      SET
+        status = 'abandoned',
+        completed_at = NOW()
+      WHERE id = $1
+        AND user_id = $2
+        AND status = 'in_progress'
+      RETURNING *
+    `,
+    [sessionId, userId]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function getSessionReport(
+  sessionId,
+  userId
+) {
+  const sessionResult = await db.query(
+    `
+      SELECT
+        ts.*,
+        tc.name AS category_name
+      FROM training_sessions ts
+      LEFT JOIN training_categories tc
+        ON tc.id = ts.category_id
+      WHERE ts.id = $1
+        AND ts.user_id = $2
+      LIMIT 1
+    `,
+    [sessionId, userId]
+  );
+
+  if (!sessionResult.rows[0]) {
+    return null;
+  }
+
+  const answersResult = await db.query(
+    `
+      SELECT
+        ta.*,
+        q.text AS question_text
+      FROM training_answers ta
+      LEFT JOIN questions q
+        ON q.id = ta.question_id
+      WHERE ta.training_session_id = $1
+      ORDER BY ta.created_at ASC
+    `,
+    [sessionId]
+  );
+
+  return {
+    session: sessionResult.rows[0],
+    answers: answersResult.rows
+  };
+}
+
 module.exports = {
   createSession,
   findSessionById,
   createAnswer,
-  completeSession
+  completeSession,
+  stopSession,
+  getSessionReport
 };

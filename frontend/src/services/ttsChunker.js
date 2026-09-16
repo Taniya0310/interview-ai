@@ -20,7 +20,10 @@ function splitCompleteWords(text) {
   const endsWithWhitespace =
     /\s$/.test(String(text));
 
-  if (endsWithWhitespace || BOUNDARY_PATTERN.test(lastCharacter)) {
+  if (
+    endsWithWhitespace ||
+    BOUNDARY_PATTERN.test(lastCharacter)
+  ) {
     return {
       words: parts,
       remainder: "",
@@ -33,7 +36,12 @@ function splitCompleteWords(text) {
   };
 }
 
-export function createTtsChunker() {
+export function createTtsChunker(maxWords = 5) {
+  const chunkLimit = Math.max(
+    1,
+    Number(maxWords) || 5
+  );
+
   let words = [];
   let remainder = "";
 
@@ -49,12 +57,12 @@ export function createTtsChunker() {
 
     const chunks = [];
 
-    while (words.length >= 5) {
-      const firstFiveWords =
-        words.slice(0, 5);
+    while (words.length >= chunkLimit) {
+      const firstWords =
+        words.slice(0, chunkLimit);
 
       const boundaryIndex =
-        firstFiveWords.findIndex((word) =>
+        firstWords.findIndex((word) =>
           BOUNDARY_PATTERN.test(word)
         );
 
@@ -72,11 +80,11 @@ export function createTtsChunker() {
         continue;
       }
 
-      const fiveWords =
-        words.splice(0, 5);
+      const chunkWords =
+        words.splice(0, chunkLimit);
 
       chunks.push(
-        fiveWords.join(" ")
+        chunkWords.join(" ")
       );
     }
 
@@ -84,19 +92,17 @@ export function createTtsChunker() {
   }
 
   function flush() {
-    const finalWords = [];
-
     if (remainder.trim()) {
       words.push(remainder.trim());
       remainder = "";
     }
 
-    if (words.length > 0) {
-      finalWords.push(words.join(" "));
-      words = [];
-    }
+    const finalText =
+      words.join(" ").trim();
 
-    return finalWords.join(" ").trim();
+    words = [];
+
+    return finalText;
   }
 
   function reset() {

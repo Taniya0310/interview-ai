@@ -57,10 +57,31 @@ async function completeTrainingSession(
   );
 }
 
+async function stopTrainingSession(
+  sessionId
+) {
+  return authenticatedFetch(
+    `/training/sessions/${sessionId}/stop`,
+    {
+      method: "POST"
+    }
+  );
+}
+
+async function getTrainingReport(
+  sessionId
+) {
+  return authenticatedFetch(
+    `/training/sessions/${sessionId}/report`
+  );
+}
+
 export {
   getTrainingCategories,
   getTrainingQuestions,
   createTrainingSession,
   submitTrainingAnswer,
-  completeTrainingSession
+  completeTrainingSession,
+  stopTrainingSession,
+  getTrainingReport
 };

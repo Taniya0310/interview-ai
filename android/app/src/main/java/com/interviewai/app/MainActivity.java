@@ -373,10 +373,13 @@ public void startModelCheck() {
     });
 }
         @JavascriptInterface
-        public void speakChunk(
-                String text,
-                String chunkId
-        ) {
+       public void speakChunk(
+        String text,
+        String chunkId,
+        float speechRate,
+        float speechPitch,
+        float speechVolume
+) {
             Log.d(
                     TAG,
                     "SPEAK_REQUEST id="
@@ -392,9 +395,12 @@ public void startModelCheck() {
             }
 
             offlineTtsManager.enqueue(
-                    text,
-                    chunkId
-            );
+        text,
+        chunkId,
+        speechRate,
+        speechPitch,
+        speechVolume
+);
         }
 
         @JavascriptInterface

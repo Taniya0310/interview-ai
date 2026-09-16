@@ -5634,3 +5634,11 @@ body {
   font-size: 20px;
   cursor: pointer;
 }
+.history-item-kind {
+  display: inline-block;
+  margin-top: 4px;
+  color: #ed5a12;
+  font-size: 12px;
+  font-weight: 700;
+}
+

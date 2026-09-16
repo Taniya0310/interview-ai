@@ -3,25 +3,36 @@ const gemini = require("./geminiService");
 const scoring = require("../utils/scoring");
 const logger = require("../utils/logger");
 const transcriptionService = require("./transcriptionService");
-
+const settingsService = require("./settingsService");
 async function processFastAnswer(answerId) {
-  const result = await db.query(
-    `SELECT
-       a.*,
-       iq.follow_up_count,
-       COALESCE(a.question_text, q.text) AS question,
-       q.expected_topics,
-       q.reference_answer,
-       q.answer_key_points
-     FROM answers a
-     JOIN interview_questions iq
-       ON iq.id = a.interview_question_id
-     JOIN questions q
-       ON q.id = iq.question_id
-     WHERE a.id = $1`,
-    [answerId]
-  );
 
+  const settings = await settingsService.getSettings();
+
+const followUpLimit = Number(
+  settings.follow_up_question_limit ?? 2
+);
+ const result = await db.query(
+  `SELECT
+     a.*,
+     u.id AS user_id,
+     i.user_id AS public_user_id,
+     iq.follow_up_count,
+     COALESCE(a.question_text, q.text) AS question,
+     q.expected_topics,
+     q.reference_answer,
+     q.answer_key_points
+   FROM answers a
+   JOIN interviews i
+     ON i.id = a.interview_id
+   JOIN users u
+     ON u.user_id = i.user_id
+   JOIN interview_questions iq
+     ON iq.id = a.interview_question_id
+   JOIN questions q
+     ON q.id = iq.question_id
+   WHERE a.id = $1`,
+  [answerId]
+);
   const answer = result.rows[0];
 
   if (!answer) {
@@ -36,15 +47,44 @@ async function processFastAnswer(answerId) {
        WHERE id = $1`,
       [answerId]
     );
+const previousAnalyses = await db.query(
+  `SELECT result
+   FROM analyses an
+   JOIN answers a ON a.id = an.answer_id
+   WHERE a.interview_question_id = $1
+     AND a.id <> $2
+   ORDER BY a.created_at`,
+  [answer.interview_question_id, answerId]
+);
 
+const coveredTopics = previousAnalyses.rows.flatMap((row) => {
+  const result =
+    typeof row.result === "string"
+      ? JSON.parse(row.result)
+      : row.result;
+
+  return Array.isArray(result?.coveredTopics)
+    ? result.coveredTopics
+    : [];
+});
+const expectedTopics = answer.expected_topics || [];
+
+const remainingTopics = expectedTopics.filter(
+  (topic) => !coveredTopics.includes(topic)
+);
     const decision =
-      await transcriptionService.evaluateVideoAudio({
-        videoPath: answer.video_path,
-        question: answer.question,
-        expectedTopics: answer.expected_topics,
-        referenceAnswer: answer.reference_answer,
-        answerKeyPoints: answer.answer_key_points,
-      });
+  await transcriptionService.evaluateVideoAudio({
+    videoPath: answer.video_path,
+    question: answer.question,
+    expectedTopics,
+    remainingTopics,
+    coveredTopics,
+    referenceAnswer: answer.reference_answer,
+    answerKeyPoints: answer.answer_key_points,
+    interviewId: answer.interview_id,
+    userId: answer.user_id,
+    answerId,
+  });
 
     const transcript = decision.transcript || "";
 
@@ -60,23 +100,26 @@ async function processFastAnswer(answerId) {
       questionFeedback: decision.questionFeedback,
     });
 
-    const needsFollowUp =
-      Boolean(decision.needsFollowUp) &&
-      answer.follow_up_count < 2;
+    const missingTopics = decision.missingTopics || [];
+
+const needsFollowUp =
+  missingTopics.length > 0 &&
+  answer.follow_up_count < followUpLimit;
 
     const liveResult = {
-      transcript,
-      passed: Boolean(decision.passed),
-      score: decision.score || 0,
-      missingPoints: decision.missingPoints || [],
-      needsFollowUp,
-      followUpQuestion: needsFollowUp
-        ? decision.followUpQuestion
-        : null,
-      questionFeedback:
-        decision.questionFeedback || null,
-      metricsPending: true,
-    };
+  transcript,
+  coveredTopics: decision.coveredTopics || [],
+  missingTopics: decision.missingTopics || [],
+  passed: Boolean(decision.passed),
+  score: decision.score || 0,
+  missingPoints: decision.missingPoints || [],
+  needsFollowUp,
+  followUpQuestion: needsFollowUp
+    ? decision.followUpQuestion
+    : null,
+  questionFeedback: decision.questionFeedback || null,
+  metricsPending: true,
+};
 
     await db.query(
       `INSERT INTO analyses
@@ -114,16 +157,38 @@ async function processFastAnswer(answerId) {
       await finalizeInterview(answer.interview_id);
 
       runDetailedQuestionAnalysis(
-        answer.interview_question_id,
-        answer.interview_id
-      ).catch((error) => {
-        logger.error("Detailed video analysis failed", {
-          answerId,
-          error: error.message,
-        });
-      });
+  answer.interview_question_id,
+  answer.interview_id
+).catch(async (error) => {
+  logger.error("Detailed video analysis failed", {
+    answerId,
+    error: error.message,
+  });
+
+  try {
+    await db.query(
+      `UPDATE analyses an
+       SET status = 'failed',
+           result = COALESCE(an.result, '{}'::jsonb) ||
+             jsonb_build_object(
+               'metricsPending', false,
+               'error', $2
+             ),
+           completed_at = NOW()
+       FROM answers a
+       WHERE an.answer_id = a.id
+         AND a.interview_question_id = $1`,
+      [answer.interview_question_id, error.message]
+    );
+  } catch (updateError) {
+    logger.error("Failed to mark detailed analysis as failed", {
+      answerId,
+      error: updateError.message,
+    });
+  }
+});
     }
-  } catch (error) {
+      } catch (error) {
     logger.error("Fast audio analysis failed", {
       answerId,
       error: error.message,
@@ -136,6 +201,31 @@ async function processFastAnswer(answerId) {
        WHERE id = $1`,
       [answerId, error.message]
     );
+
+    try {
+      await db.query(
+        `INSERT INTO analyses
+          (answer_id, result, status, completed_at)
+         VALUES ($1, $2, 'failed', NOW())
+         ON CONFLICT (answer_id)
+         DO UPDATE SET
+           result = EXCLUDED.result,
+           status = 'failed',
+           completed_at = NOW()`,
+        [
+          answerId,
+          JSON.stringify({
+            metricsPending: false,
+            error: error.message,
+          }),
+        ]
+      );
+    } catch (analysisError) {
+      logger.error("Failed to save failed analysis status", {
+        answerId,
+        error: analysisError.message,
+      });
+    }
   }
 }
 
@@ -144,27 +234,32 @@ async function runDetailedQuestionAnalysis(
   interviewId
 ) {
   const result = await db.query(
-    `SELECT
-       a.id AS answer_id,
-       a.video_path,
-       a.mime_type,
-       a.is_follow_up,
-       a.created_at,
-       COALESCE(a.question_text, q.text) AS question,
-       q.expected_topics,
-       an.result
-     FROM answers a
-     JOIN interview_questions iq
-       ON iq.id = a.interview_question_id
-     JOIN questions q
-       ON q.id = iq.question_id
-     LEFT JOIN analyses an
-       ON an.answer_id = a.id
-     WHERE a.interview_question_id = $1
-     ORDER BY a.created_at`,
-    [interviewQuestionId]
-  );
-
+  `SELECT
+     a.id AS answer_id,
+     a.video_path,
+     a.mime_type,
+     a.is_follow_up,
+     a.created_at,
+     u.id AS user_id,
+     i.user_id AS public_user_id,
+     COALESCE(a.question_text, q.text) AS question,
+     q.expected_topics,
+     an.result
+   FROM answers a
+   JOIN interviews i
+     ON i.id = a.interview_id
+   JOIN users u
+     ON u.user_id = i.user_id
+   JOIN interview_questions iq
+     ON iq.id = a.interview_question_id
+   JOIN questions q
+     ON q.id = iq.question_id
+   LEFT JOIN analyses an
+     ON an.answer_id = a.id
+   WHERE a.interview_question_id = $1
+   ORDER BY a.created_at`,
+  [interviewQuestionId]
+);
   if (!result.rowCount) {
     logger.info("No answers found for detailed analysis", {
       interviewQuestionId,
@@ -198,16 +293,15 @@ async function runDetailedQuestionAnalysis(
     transcripts,
   });
 
- const detailed = await gemini.analyze({
-  filePath,
-  mimeType,
-  question,
-  expectedTopics,
-  previousAnswers,
-
+const detailed = await gemini.analyze({
+  filePath: firstAnswer.video_path,
+  mimeType: firstAnswer.mime_type,
+  question: firstAnswer.question,
+  expectedTopics: firstAnswer.expected_topics || [],
+  previousAnswers: transcripts,
   interviewId,
-  userId,
-  answerId,
+  userId: firstAnswer.user_id,
+  answerId: firstAnswer.answer_id,
 });
 
   logger.info("Detailed question analysis completed", {
@@ -245,6 +339,21 @@ async function runDetailedQuestionAnalysis(
       JSON.stringify(finalResult),
     ]
   );
+
+  await db.query(
+  `UPDATE analyses an
+   SET status = 'complete',
+       result = jsonb_set(
+         COALESCE(an.result, '{}'::jsonb),
+         '{metricsPending}',
+         'false'::jsonb
+       ),
+       completed_at = NOW()
+   FROM answers a
+   WHERE an.answer_id = a.id
+     AND a.interview_question_id = $1`,
+  [interviewQuestionId]
+);
 }
 
 async function finalizeInterview(interviewId) {

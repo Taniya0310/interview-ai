@@ -59,10 +59,16 @@ async function evaluateVideoAudio({
   videoPath,
   question,
   expectedTopics = [],
+  coveredTopics = [],
+  remainingTopics = [],
   referenceAnswer = "",
   answerKeyPoints = [],
+  interviewId = null,
+  userId = null,
+  answerId = null,
+  requestType = "interview_audio_analysis",
 }) {
-  if (!fs.existsSync(videoPath)) {
+  if (!videoPath || !fs.existsSync(videoPath)) {
     throw new Error(`Video file not found: ${videoPath}`);
   }
 
@@ -83,6 +89,9 @@ async function evaluateVideoAudio({
     logger.info("Audio extracted; sending one combined request to Gemini", {
       audioPath,
       question,
+      expectedTopics,
+      coveredTopics,
+      remainingTopics,
       referenceAnswerProvided: Boolean(referenceAnswer),
       answerKeyPointsCount: answerKeyPoints.length,
     });
@@ -92,15 +101,22 @@ async function evaluateVideoAudio({
       mimeType: "audio/wav",
       question,
       expectedTopics,
+      coveredTopics,
+      remainingTopics,
       referenceAnswer,
       answerKeyPoints,
-      requestType: "interview_audio_analysis",
+      interviewId,
+      userId,
+      answerId,
+      requestType,
     });
 
     logger.info("Audio transcription and evaluation completed", {
       transcript: result.transcript || "[Transcript unavailable]",
       passed: result.passed,
       score: result.score,
+      coveredTopics: result.coveredTopics,
+      missingTopics: result.missingTopics,
       missingPoints: result.missingPoints,
       needsFollowUp: result.needsFollowUp,
       followUpQuestion: result.followUpQuestion,

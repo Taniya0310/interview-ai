@@ -5,6 +5,8 @@ import {
   authenticatedFetch
 } from "../services/authApi";
 import "../styles/liveInterview.css";
+
+import { useSettings } from "../context/SettingsContext";
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:4000/api";
@@ -35,7 +37,9 @@ function getFriendlyError(error, fallback) {
 }
 
 export default function LiveInterviewPage() {
+  
   const navigate = useNavigate();
+  const { settings } = useSettings();
 
   // -----------------------------
   // Interview
@@ -112,7 +116,9 @@ const ttsChunkIdRef = useRef(0);
   // -----------------------------
   // Constants
   // -----------------------------
-  const SILENCE_LIMIT = 3000;
+  const SILENCE_LIMIT = Number(
+  settings.silence_timeout_ms ?? 3000
+);
   const MIN_RECORDING_TIME = 1500;
   const SILENCE_THRESHOLD = 0.015;
 
@@ -120,9 +126,17 @@ const ttsChunkIdRef = useRef(0);
   // LOAD INTERVIEW
   // ============================================================
 
-  const TTS_RATE = 0.90;
-const TTS_PITCH = 1.0;
-const TTS_VOLUME = 1.0;
+  const TTS_RATE = Number(
+  settings.speech_speed ?? 0.90
+);
+
+const TTS_PITCH = Number(
+  settings.speech_pitch ?? 1
+);
+
+const TTS_VOLUME = Number(
+  settings.speech_volume ?? 1
+);
 const TTS_START_DELAY = 400;
 const TTS_END_DELAY = 600;
   useEffect(() => {
@@ -394,7 +408,9 @@ ${questionText}
       nativeTts.clearQueue?.();
 
       ttsChunkerRef.current =
-        createTtsChunker();
+  createTtsChunker(
+    Number(settings.tts_chunk_size ?? 5)
+  );
 
       ttsChunkIdRef.current = 0;
 
@@ -434,10 +450,13 @@ ${questionText}
           text: chunk,
         });
 
-        nativeTts.speakChunk(
-          chunk,
-          chunkId
-        );
+       nativeTts.speakChunk(
+  chunk,
+  chunkId,
+  TTS_RATE,
+  TTS_PITCH,
+  TTS_VOLUME
+);
       });
 
       const wordCount =
@@ -774,7 +793,7 @@ ${questionText}
         );
 
         speakQuestion(`
-Thanks for explaining that. I would like to ask a follow-up question.
+Okay Now tell me a little more.
 
 ${followUp}
 

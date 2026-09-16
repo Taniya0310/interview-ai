@@ -28,9 +28,14 @@ async function getQuestions(
   );
 }
 
-async function createSession(userId, data = {}) {
+async function createSession(
+  userId,
+  data = {}
+) {
   try {
-    const categoryId = Number(data.categoryId);
+    const categoryId = Number(
+      data.categoryId
+    );
 
     const limit = Math.min(
       Math.max(Number(data.limit) || 5, 1),
@@ -38,7 +43,9 @@ async function createSession(userId, data = {}) {
     );
 
     if (!categoryId) {
-      throw new Error("Category ID is required");
+      throw new Error(
+        "Category ID is required"
+      );
     }
 
     const questions = await getQuestions(
@@ -47,7 +54,9 @@ async function createSession(userId, data = {}) {
     );
 
     if (!questions.length) {
-      throw new Error("No training questions found");
+      throw new Error(
+        "No training questions found"
+      );
     }
 
     const session =
@@ -60,16 +69,19 @@ async function createSession(userId, data = {}) {
 
     return {
       session,
-      questions,
+      questions
     };
   } catch (error) {
-    console.error("[TRAINING SESSION ERROR]", {
-      userId,
-      requestBody: data,
-      message: error.message,
-      detail: error.detail,
-      code: error.code,
-    });
+    console.error(
+      "[TRAINING SESSION ERROR]",
+      {
+        userId,
+        requestBody: data,
+        message: error.message,
+        detail: error.detail,
+        code: error.code
+      }
+    );
 
     throw error;
   }
@@ -123,18 +135,19 @@ async function submitAnswer(
     data.file.mimetype ||
     "audio/webm";
 
- const analysis =
-  await geminiService.evaluateAudioAnswer({
-    filePath: audioPath,
-    mimeType: audioMimeType,
-    question: question.text,
-    referenceAnswer:
-      question.reference_answer || "",
-    expectedTopics:
-      question.answer_key_points || [],
-    userId,
-    requestType: "training_audio_analysis",
-  });
+  const analysis =
+    await geminiService.evaluateAudioAnswer({
+      filePath: audioPath,
+      mimeType: audioMimeType,
+      question: question.text,
+      referenceAnswer:
+        question.reference_answer || "",
+      expectedTopics:
+        question.answer_key_points || [],
+      userId,
+      requestType:
+        "training_audio_analysis"
+    });
 
   const answer =
     await trainingModel.createAnswer(
@@ -151,7 +164,8 @@ async function submitAnswer(
     answer,
     analysis,
     action:
-      analysis?.action || "next_question",
+      analysis?.action ||
+      "next_question",
     nextQuestion:
       analysis?.nextQuestion || null,
     message:
@@ -178,9 +192,49 @@ async function completeSession(
   return session;
 }
 
+async function stopSession(
+  userId,
+  sessionId
+) {
+  const session =
+    await trainingModel.stopSession(
+      sessionId,
+      userId
+    );
+
+  if (!session) {
+    throw new Error(
+      "Training session not found or already stopped"
+    );
+  }
+
+  return session;
+}
+
+async function getSessionReport(
+  userId,
+  sessionId
+) {
+  const report =
+    await trainingModel.getSessionReport(
+      sessionId,
+      userId
+    );
+
+  if (!report) {
+    throw new Error(
+      "Training session not found"
+    );
+  }
+
+  return report;
+}
+
 module.exports = {
   getQuestions,
   createSession,
   submitAnswer,
-  completeSession
+  completeSession,
+  stopSession,
+  getSessionReport
 };

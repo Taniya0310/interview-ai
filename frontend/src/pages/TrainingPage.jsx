@@ -10,10 +10,11 @@ import {
 
 import { createTtsChunker } from "../services/ttsChunker";
 import "../styles/training.css";
-
+import { useSettings } from "../context/SettingsContext";
 import {
   submitTrainingAnswer,
   completeTrainingSession,
+  stopTrainingSession
 } from "../services/trainingApi";
 
 function formatTime(seconds) {
@@ -31,7 +32,7 @@ function formatTime(seconds) {
 export default function TrainingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-
+const { settings } = useSettings();
   const session = location.state?.session;
   const questions = location.state?.questions || [];
 
@@ -49,7 +50,7 @@ const ttsRunIdRef = useRef(0);
   const recordingStartedAtRef = useRef(null);
   const hasSpeechRef = useRef(false);
   const mountedRef = useRef(true);
-
+const stoppingTrainingRef = useRef(false);
   const ttsChunkerRef = useRef(null);
   const ttsChunkIdRef = useRef(0);
 
@@ -72,7 +73,9 @@ const ttsRunIdRef = useRef(0);
     question?.text ||
     "No question available.";
 
-  const SILENCE_LIMIT = 3000;
+  const SILENCE_LIMIT = Number(
+  settings.silence_timeout_ms ?? 3000
+);
   const MIN_RECORDING_TIME = 1500;
   const SILENCE_THRESHOLD = 0.015;
 
@@ -205,7 +208,10 @@ function speakQuestion() {
     nativeTts.stop?.();
     nativeTts.clearQueue?.();
 
-    ttsChunkerRef.current = createTtsChunker();
+    ttsChunkerRef.current =
+  createTtsChunker(
+    Number(settings.tts_chunk_size ?? 5)
+  );
     ttsChunkIdRef.current = 0;
 
     const chunks = ttsChunkerRef.current.addText(
@@ -257,9 +263,12 @@ setTimeout(() => {
     });
 
     nativeTts.speakChunk(
-      chunk,
-      chunkId
-    );
+  chunk,
+  chunkId,
+  Number(settings.speech_speed ?? 0.90),
+  Number(settings.speech_pitch ?? 1),
+  Number(settings.speech_volume ?? 1)
+);
   });
 }, TTS_START_DELAY);
 
@@ -455,7 +464,36 @@ setTimeout(() => {
       recorder.onstop = async () => {
         clearInterval(timerRef.current);
         clearSilenceMonitoring();
+if (stoppingTrainingRef.current) {
+  stream.getTracks().forEach((track) =>
+    track.stop()
+  );
 
+  streamRef.current = null;
+  recorderRef.current = null;
+
+  stopAudioResources();
+  setRecording(false);
+
+  try {
+    await stopTrainingSession(session.id);
+
+    navigate("/training/results", {
+      replace: true,
+      state: {
+        sessionId: session.id
+      }
+    });
+  } catch (requestError) {
+    setSubmitting(false);
+    setError(
+      requestError?.message ||
+      "Unable to stop training."
+    );
+  }
+
+  return;
+}
         const duration =
           Math.max(
             1,
@@ -543,7 +581,63 @@ setTimeout(() => {
       recorder.stop();
     }
   }
+async function handleStopTraining() {
+  if (!session?.id || stoppingTrainingRef.current) {
+    return;
+  }
 
+  const shouldStop = window.confirm(
+    "Are you sure you want to stop this training?"
+  );
+
+  if (!shouldStop) {
+    return;
+  }
+
+  try {
+    stoppingTrainingRef.current = true;
+    setSubmitting(true);
+    setError("");
+    setMessage("Stopping training...");
+
+    clearInterval(timerRef.current);
+    clearTimeout(feedbackTimerRef.current);
+    clearSilenceMonitoring();
+    clearTtsTimer();
+
+    window.AndroidTTS?.stop?.();
+    window.AndroidTTS?.clearQueue?.();
+
+    const recorder = recorderRef.current;
+
+    if (
+      recorder &&
+      recorder.state === "recording"
+    ) {
+      recorder.stop();
+    } else {
+      streamRef.current?.getTracks().forEach(
+        (track) => track.stop()
+      );
+
+      await stopTrainingSession(session.id);
+
+      navigate("/training/results", {
+        replace: true,
+        state: {
+          sessionId: session.id
+        }
+      });
+    }
+  } catch (requestError) {
+    stoppingTrainingRef.current = false;
+    setSubmitting(false);
+    setError(
+      requestError?.message ||
+      "Unable to stop training."
+    );
+  }
+}
   async function submitAnswer(
     audioToSubmit,
     duration
@@ -716,7 +810,14 @@ setTimeout(() => {
 
             <h1>Voice Training</h1>
           </div>
-
+<button
+  type="button"
+  className="training-stop-button"
+  onClick={handleStopTraining}
+  disabled={submitting}
+>
+  Stop Training
+</button>
           <span className="training-progress">
             Question {questionIndex + 1} of {questions.length}
           </span>

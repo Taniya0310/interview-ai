@@ -76,7 +76,7 @@ async function getLogs(filters = {}) {
     SELECT
       a.id,
       a.interview_id,
-      a.user_id,
+      u.user_id AS public_user_id,
       a.answer_id,
       a.request_type,
       a.provider,
@@ -95,6 +95,8 @@ async function getLogs(filters = {}) {
     FROM ai_usage_logs a
     LEFT JOIN interviews i
       ON i.id = a.interview_id
+   LEFT JOIN users u
+  ON u.user_id = a.user_id
     ${whereClause}
     ORDER BY a.created_at DESC
     LIMIT 500

@@ -19,7 +19,7 @@ import {
 import ProtectedRoute from "./components/ProtectedRoute";
 import GifSplashScreen from "./components/GifSplashScreen";
 import BottomNav from "./components/BottomNav";
-
+import TrainingResultsPage from "./pages/TrainingResultsPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -36,7 +36,7 @@ import InterviewHistoryPage from "./pages/InterviewHistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import TrainingDeviceCheckPage from "./pages/TrainingDeviceCheckPage";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
-
+import { SettingsProvider } from "./context/SettingsContext";
 function GlobalBottomNav() {
   const location = useLocation();
 
@@ -118,7 +118,7 @@ function App() {
           path="/"
           element={
             localStorage.getItem("hasSeenLanding") ===
-            "true" ? (
+              "true" ? (
               <Navigate
                 to="/dashboard"
                 replace
@@ -164,7 +164,10 @@ function App() {
             path="/interview/device-check"
             element={<DeviceCheckPage />}
           />
-
+          <Route
+            path="/training/results"
+            element={<TrainingResultsPage />}
+          />
           <Route
             path="/interview/live"
             element={<LiveInterviewPage />}
@@ -213,7 +216,9 @@ function App() {
 export default function AppWithAuth() {
   return (
     <AuthProvider>
-      <App />
+      <SettingsProvider>
+        <App />
+      </SettingsProvider>
     </AuthProvider>
   );
 }

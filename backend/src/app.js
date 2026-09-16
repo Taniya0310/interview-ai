@@ -76,5 +76,9 @@ app.use(
 app.use(
   require("./middleware/errorMiddleware")
 );
-
+app.use(
+  "/api/settings",
+  authMiddleware,
+  require("./routes/settingsRoutes")
+);
 module.exports = app;

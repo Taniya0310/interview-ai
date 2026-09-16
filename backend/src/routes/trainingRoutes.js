@@ -69,4 +69,16 @@ router.post(
   trainingController.completeSession
 );
 
+router.post(
+  "/sessions/:id/stop",
+  authMiddleware,
+  trainingController.stopSession
+);
+
+router.get(
+  "/sessions/:id/report",
+  authMiddleware,
+  trainingController.getSessionReport
+);
+
 module.exports = router;

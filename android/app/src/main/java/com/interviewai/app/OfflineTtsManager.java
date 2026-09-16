@@ -174,10 +174,13 @@ public final class OfflineTtsManager {
         return ready.get();
     }
 
-    public void enqueue(
-            String text,
-            String chunkId
-    ) {
+   public void enqueue(
+        String text,
+        String chunkId,
+        float speechRate,
+        float speechPitch,
+        float speechVolume
+) {
         if (text == null || text.trim().isEmpty()) {
             return;
         }
@@ -195,10 +198,13 @@ public final class OfflineTtsManager {
 
         generationQueue.offer(
                 new TtsJob(
-                        text.trim(),
-                        chunkId,
-                        enqueueTime
-                )
+        text.trim(),
+        chunkId,
+        enqueueTime,
+        speechRate,
+        speechPitch,
+        speechVolume
+)
         );
 
         Log.d(
@@ -355,11 +361,11 @@ public final class OfflineTtsManager {
                 );
 
                 GeneratedAudio generated =
-                        engine.generate(
-                                job.text,
-                                0,
-                                0.8f
-                        );
+        engine.generate(
+                job.text,
+                0,
+                job.speechRate
+        );
 
                 long generationEnd =
                         System.nanoTime();
@@ -371,7 +377,10 @@ public final class OfflineTtsManager {
                         generated.getSampleRate();
 
                 short[] pcm =
-                        convertToPcm16(samples);
+        convertToPcm16(
+                samples,
+                job.speechVolume
+        );
 
                 double generationMs =
                         nanosToMilliseconds(
@@ -564,9 +573,10 @@ hasPlayedChunk = true;
         }
     }
 
-    private static short[] convertToPcm16(
-            float[] samples
-    ) {
+   private static short[] convertToPcm16(
+        float[] samples,
+        float volume
+){
         short[] pcm =
                 new short[samples.length];
 
@@ -574,14 +584,16 @@ hasPlayedChunk = true;
              index < samples.length;
              index++) {
 
-            float value =
-                    Math.max(
-                            -1.0f,
-                            Math.min(
-                                    1.0f,
-                                    samples[index]
-                            )
-                    );
+           float value =
+        samples[index] * volume;
+
+value = Math.max(
+        -1.0f,
+        Math.min(
+                1.0f,
+                value
+        )
+);
 
             pcm[index] =
                     (short) (
@@ -653,15 +665,23 @@ hasPlayedChunk = true;
         final String text;
         final String id;
         final long enqueueTime;
-
+final float speechRate;
+final float speechPitch;
+final float speechVolume;
         TtsJob(
                 String text,
                 String id,
-                long enqueueTime
+                long enqueueTime,
+                float speechRate,
+                float speechPitch,
+                float speechVolume
         ) {
             this.text = text;
             this.id = id;
             this.enqueueTime = enqueueTime;
+            this.speechRate = speechRate;
+            this.speechPitch = speechPitch;
+            this.speechVolume = speechVolume;
         }
     }
 
