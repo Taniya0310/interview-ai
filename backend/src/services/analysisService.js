@@ -157,16 +157,38 @@ const needsFollowUp =
       await finalizeInterview(answer.interview_id);
 
       runDetailedQuestionAnalysis(
-        answer.interview_question_id,
-        answer.interview_id
-      ).catch((error) => {
-        logger.error("Detailed video analysis failed", {
-          answerId,
-          error: error.message,
-        });
-      });
+  answer.interview_question_id,
+  answer.interview_id
+).catch(async (error) => {
+  logger.error("Detailed video analysis failed", {
+    answerId,
+    error: error.message,
+  });
+
+  try {
+    await db.query(
+      `UPDATE analyses an
+       SET status = 'failed',
+           result = COALESCE(an.result, '{}'::jsonb) ||
+             jsonb_build_object(
+               'metricsPending', false,
+               'error', $2
+             ),
+           completed_at = NOW()
+       FROM answers a
+       WHERE an.answer_id = a.id
+         AND a.interview_question_id = $1`,
+      [answer.interview_question_id, error.message]
+    );
+  } catch (updateError) {
+    logger.error("Failed to mark detailed analysis as failed", {
+      answerId,
+      error: updateError.message,
+    });
+  }
+});
     }
-  } catch (error) {
+      } catch (error) {
     logger.error("Fast audio analysis failed", {
       answerId,
       error: error.message,
@@ -179,6 +201,31 @@ const needsFollowUp =
        WHERE id = $1`,
       [answerId, error.message]
     );
+
+    try {
+      await db.query(
+        `INSERT INTO analyses
+          (answer_id, result, status, completed_at)
+         VALUES ($1, $2, 'failed', NOW())
+         ON CONFLICT (answer_id)
+         DO UPDATE SET
+           result = EXCLUDED.result,
+           status = 'failed',
+           completed_at = NOW()`,
+        [
+          answerId,
+          JSON.stringify({
+            metricsPending: false,
+            error: error.message,
+          }),
+        ]
+      );
+    } catch (analysisError) {
+      logger.error("Failed to save failed analysis status", {
+        answerId,
+        error: analysisError.message,
+      });
+    }
   }
 }
 
