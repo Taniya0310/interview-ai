@@ -220,7 +220,7 @@ export default function SettingsPage() {
               TTS chunk size
               <input
                 type="number"
-                min="50"
+                min="5"
                 max="500"
                 value={settings.tts_chunk_size}
                 onChange={(event) =>

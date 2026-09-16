@@ -204,7 +204,7 @@ export default function TokenManagementPage() {
                   <tr key={log.id}>
                     <td>{formatDate(log.created_at)}</td>
                     <td>{log.interview_id || "—"}</td>
-                    <td>{log.user_id || "—"}</td>
+                    <td>{log.public_user_id || "—"}</td>
                     <td>
                       {formatRequestType(
                         log.request_type,

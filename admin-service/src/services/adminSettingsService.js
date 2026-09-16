@@ -33,7 +33,7 @@ const SETTING_DEFINITIONS = {
 
   tts_chunk_size: {
     type: "number",
-    min: 50,
+    min: 5,
     max: 500,
   },
 

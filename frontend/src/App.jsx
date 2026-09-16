@@ -19,7 +19,7 @@ import {
 import ProtectedRoute from "./components/ProtectedRoute";
 import GifSplashScreen from "./components/GifSplashScreen";
 import BottomNav from "./components/BottomNav";
-
+import TrainingResultsPage from "./pages/TrainingResultsPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -118,7 +118,7 @@ function App() {
           path="/"
           element={
             localStorage.getItem("hasSeenLanding") ===
-            "true" ? (
+              "true" ? (
               <Navigate
                 to="/dashboard"
                 replace
@@ -164,7 +164,10 @@ function App() {
             path="/interview/device-check"
             element={<DeviceCheckPage />}
           />
-
+          <Route
+            path="/training/results"
+            element={<TrainingResultsPage />}
+          />
           <Route
             path="/interview/live"
             element={<LiveInterviewPage />}

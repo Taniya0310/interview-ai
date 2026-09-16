@@ -242,23 +242,27 @@ async function evaluateAudioAnswer({
   mimeType = "audio/wav",
   question,
   expectedTopics = [],
+  coveredTopics = [],
+  remainingTopics = [],
   referenceAnswer = "",
   answerKeyPoints = [],
   interviewId = null,
   userId = null,
   answerId = null,
+  requestType = "audio_analysis",
 }) {
   if (!geminiApiKey) {
-    return {
-      transcript: "",
-      passed: false,
-      score: 0,
-      missingPoints: [],
-      needsFollowUp: false,
-      followUpQuestion: null,
-      questionFeedback:
-        "Gemini is not configured"
-    };
+   return {
+  transcript: "",
+  coveredTopics: [],
+  missingTopics: [],
+  passed: false,
+  score: 0,
+  missingPoints: [],
+  needsFollowUp: false,
+  followUpQuestion: null,
+  questionFeedback: "Gemini is not configured",
+};
   }
 
   if (!filePath) {
@@ -282,18 +286,42 @@ ${JSON.stringify(
     ? answerKeyPoints
     : expectedTopics || []
 )}
+Previously covered topics:
+${JSON.stringify(coveredTopics)}
 
+Remaining topics:
+${JSON.stringify(remainingTopics)}
 Analyze the attached audio and return ONLY valid JSON:
 
 {
   "transcript": "complete transcription",
+  "coveredTopics": [],
+  "missingTopics": [],
   "passed": true,
   "score": 0,
-  "missingPoints": [],
   "needsFollowUp": false,
   "followUpQuestion": null,
   "questionFeedback": "short useful feedback"
 }
+
+- coveredTopics must include topics covered in the current answer.
+- missingTopics must include only topics still missing after considering previously covered topics.
+- Ask the follow-up only about missingTopics.
+- If missingTopics is empty, set needsFollowUp to false.
+LANGUAGE REQUIREMENT:
+The candidate must answer entirely in English.
+
+If the candidate speaks primarily in Hindi or any language other than English:
+
+1. Set score to 0.
+2. Set passed to false.
+3. Set needsFollowUp to true.
+4. Set followUpQuestion to the original Question exactly.
+5. Set questionFeedback to:
+   "Please answer in English only. Try the question again in English."
+6. Do not evaluate the content of the non-English answer.
+7. Do not move to the next question.
+8. Do not create a different follow-up question.
 
 Rules:
 - Score from 0 to 100.
@@ -313,26 +341,35 @@ Rules:
   interviewId,
   userId,
   answerId,
-  requestType: "audio_analysis",
+  requestType,
 });
-  const analysis = {
-    transcript: result.transcript || "",
-    passed: Boolean(result.passed),
-    score: Number(result.score) || 0,
-    missingPoints: Array.isArray(
-      result.missingPoints
-    )
-      ? result.missingPoints
-      : [],
-    needsFollowUp: Boolean(
-      result.needsFollowUp
-    ),
-    followUpQuestion:
-      result.followUpQuestion || null,
-    questionFeedback:
-      result.questionFeedback || ""
-  };
 
+const analysis = {
+  transcript: result.transcript || "",
+
+  coveredTopics: Array.isArray(result.coveredTopics)
+    ? result.coveredTopics
+    : [],
+
+  missingTopics: Array.isArray(result.missingTopics)
+    ? result.missingTopics
+    : [],
+
+  passed: Boolean(result.passed),
+  score: Number(result.score) || 0,
+
+  missingPoints: Array.isArray(result.missingPoints)
+    ? result.missingPoints
+    : [],
+
+  needsFollowUp: Boolean(result.needsFollowUp),
+
+  followUpQuestion:
+    result.followUpQuestion || null,
+
+  questionFeedback:
+    result.questionFeedback || "",
+};
   logger.info(
     "Training audio evaluation completed",
     {
@@ -395,6 +432,8 @@ async function evaluateAnswer({
   mimeType,
   question,
   expectedTopics,
+  coveredTopics = [],
+  remainingTopics = [],
   interviewId = null,
   userId = null,
   answerId = null,
@@ -402,6 +441,8 @@ async function evaluateAnswer({
   if (!geminiApiKey) {
     return {
       transcript: null,
+      coveredTopics: [],
+      missingTopics: [],
       needsFollowUp: false,
       followUpQuestion: null,
       questionFeedback: 'Gemini is not configured',
@@ -418,14 +459,38 @@ ${question}
 Expected topics:
 ${JSON.stringify(expectedTopics || [])}
 
+Previously covered topics:
+${JSON.stringify(coveredTopics || [])}
+
+Remaining topics:
+${JSON.stringify(remainingTopics || [])}
+
 Return ONLY valid JSON:
 {
   "transcript": "exact transcription of what the candidate said",
-  "needsFollowUp": true,
+  "coveredTopics": [],
+  "missingTopics": [],
+  "needsFollowUp": false,
   "followUpQuestion": "string or null",
   "questionFeedback": "short explanation"
 }
 
+- coveredTopics must contain only topics covered by the current answer.
+- missingTopics must contain only expected topics not yet covered.
+- Ask a follow-up only about missingTopics.
+- Set needsFollowUp to false when missingTopics is empty.
+- Set followUpQuestion to null when needsFollowUp is false.
+LANGUAGE REQUIREMENT:
+The candidate must answer in English only.
+
+If the transcript is primarily in Hindi or another language:
+
+- Set needsFollowUp to true.
+- Set followUpQuestion to the original question exactly.
+- Set questionFeedback to:
+  "Please answer in English only. Try the question again in English."
+- Do not evaluate the answer content.
+- Do not continue to the next question.
 Rules:
 - Use natural Indian English wording.
 - Keep the follow-up question short and professional.
@@ -618,7 +683,17 @@ Return ONLY valid JSON:
   "followUpQuestion": "string or null",
   "questionFeedback": "short feedback"
 }
+LANGUAGE REQUIREMENT:
+The candidate must answer in English only.
 
+If the transcript is primarily in Hindi or another language:
+
+- Set needsFollowUp to true.
+- Set followUpQuestion to the original question exactly.
+- Set questionFeedback to:
+  "Please answer in English only. Try the question again in English."
+- Do not evaluate the answer content.
+- Do not continue to the next question.
 Rules:
 - needsFollowUp must be true or false.
 - Ask a follow-up only when the answer is incomplete, unclear, or incorrect.

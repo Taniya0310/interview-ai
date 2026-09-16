@@ -1,31 +1,59 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, BriefcaseBusiness } from "lucide-react";
+import { BriefcaseBusiness } from "lucide-react";
 import PageLoader from "../components/PageLoader";
 import { authenticatedFetch } from "../services/authApi";
-const API =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:4000/api";
 
 async function api(path, options = {}) {
   return authenticatedFetch(path, options);
 }
 
-function getInterviewId(interview) {
+function isTraining(item) {
+  return item?.type === "training";
+}
+
+function getId(item) {
   return (
-    interview?.id ??
-    interview?.interview_id ??
-    interview?.interviewId ??
+    item?.id ||
+    item?.interview_id ||
+    item?.interviewId ||
     null
   );
 }
 
-function getScore(interview) {
+function getRole(item) {
+  if (isTraining(item)) {
+    return item.title || "Voice Training";
+  }
+
+  return `Interview ${item?.interview_number || ""}`;
+}
+
+function getType(item) {
+  if (isTraining(item)) {
+    return item.category_name || "Training";
+  }
+
+  return (
+    item?.interviewType ||
+    item?.interview_type ||
+    "Technical"
+  );
+}
+
+function getDifficulty(item) {
+  return item?.difficulty || "Beginner";
+}
+
+function getStatus(item) {
+  return item?.status || "completed";
+}
+
+function getScore(item) {
   const value =
-    interview?.score ??
-    interview?.overall_score ??
-    interview?.overallScore ??
-    interview?.report?.score ??
+    item?.score ??
+    item?.overall_score ??
+    item?.overallScore ??
     null;
 
   if (
@@ -36,49 +64,19 @@ function getScore(interview) {
     return null;
   }
 
-  const number = Number(value);
+  const score = Number(value);
 
-  return Number.isFinite(number)
-    ? Math.round(number)
+  return Number.isFinite(score)
+    ? Math.round(score)
     : null;
 }
 
-function getRole(interview) {
-  return `Interview ${interview?.interview_number || ""
-    }`;
-}
-
-function getInterviewType(interview) {
-  return (
-    interview?.interviewType ??
-    interview?.interview_type ??
-    interview?.type ??
-    "Technical"
-  );
-}
-
-function getDifficulty(interview) {
-  return (
-    interview?.difficulty ??
-    "Beginner"
-  );
-}
-
-function getStatus(interview) {
-  return (
-    interview?.status ??
-    interview?.state ??
-    "completed"
-  );
-}
-
-function getDate(interview) {
+function getDate(item) {
   const value =
-    interview?.created_at ??
-    interview?.createdAt ??
-    interview?.started_at ??
-    interview?.startedAt ??
-    interview?.date;
+    item?.created_at ||
+    item?.started_at ||
+    item?.createdAt ||
+    item?.date;
 
   if (!value) {
     return "Date unavailable";
@@ -90,22 +88,18 @@ function getDate(interview) {
     return "Date unavailable";
   }
 
-  return date.toLocaleDateString(
-    "en-IN",
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }
-  );
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
 }
 
-function getTime(interview) {
+function getTime(item) {
   const value =
-    interview?.created_at ??
-    interview?.createdAt ??
-    interview?.started_at ??
-    interview?.startedAt;
+    item?.created_at ||
+    item?.started_at ||
+    item?.createdAt;
 
   if (!value) {
     return "";
@@ -117,13 +111,10 @@ function getTime(interview) {
     return "";
   }
 
-  return date.toLocaleTimeString(
-    "en-IN",
-    {
-      hour: "numeric",
-      minute: "2-digit",
-    }
-  );
+  return date.toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit"
+  });
 }
 
 function formatLabel(value) {
@@ -159,62 +150,63 @@ function getScoreClass(score) {
 }
 
 function getStatusLabel(status) {
-  const normalized = String(status || "").toLowerCase();
+  const value = String(
+    status || ""
+  ).toLowerCase();
 
   if (
-    normalized === "completed" ||
-    normalized === "finished"
+    value === "completed" ||
+    value === "finished"
   ) {
     return "Completed";
   }
 
   if (
-    normalized === "processing" ||
-    normalized === "analyzing"
+    value === "abandoned" ||
+    value === "stopped"
   ) {
-    return "Processing";
+    return "Stopped";
   }
 
   if (
-    normalized === "in_progress" ||
-    normalized === "in-progress"
+    value === "in_progress" ||
+    value === "in-progress"
   ) {
     return "In progress";
   }
 
   if (
-    normalized === "quit" ||
-    normalized === "quited"
+    value === "processing" ||
+    value === "analyzing"
+  ) {
+    return "Processing";
+  }
+
+  if (
+    value === "quit" ||
+    value === "quited"
   ) {
     return "Quit";
   }
 
   if (
-    normalized === "cancelled" ||
-    normalized === "canceled"
+    value === "cancelled" ||
+    value === "canceled"
   ) {
     return "Cancelled";
   }
 
   return formatLabel(status);
 }
+
 export default function InterviewHistoryPage() {
   const navigate = useNavigate();
 
-  const [interviews, setInterviews] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  const [search, setSearch] =
-    useState("");
-
-  const [filter, setFilter] =
-    useState("all");
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     let mounted = true;
@@ -224,41 +216,24 @@ export default function InterviewHistoryPage() {
         setLoading(true);
         setError("");
 
-        /*
-         * Uses the existing interviews API.
-         *
-         * If your backend later exposes a dedicated
-         * /interviews/history endpoint, this can be
-         * changed without affecting the UI.
-         */
-        const data =
-          await api("/interviews");
-
-        if (!mounted) {
-          return;
-        }
+        const data = await api("/interviews");
 
         const list = Array.isArray(data)
           ? data
-          : Array.isArray(
-            data?.interviews
-          )
+          : Array.isArray(data?.interviews)
             ? data.interviews
             : Array.isArray(data?.data)
               ? data.data
               : [];
 
-        setInterviews(list);
-      } catch (err) {
-        console.error(
-          "Interview history error:",
-          err
-        );
-
+        if (mounted) {
+          setItems(list);
+        }
+      } catch (requestError) {
         if (mounted) {
           setError(
-            err?.message ||
-            "Unable to load interview history."
+            requestError?.message ||
+            "Unable to load history."
           );
         }
       } finally {
@@ -275,17 +250,25 @@ export default function InterviewHistoryPage() {
     };
   }, []);
 
-  function handleBack() {
-    navigate("/dashboard");
-  }
-
-  function handleOpenInterview(
-    interview
-  ) {
-    const id =
-      getInterviewId(interview);
+  function handleOpenItem(item) {
+    const id = getId(item);
 
     if (!id) {
+      return;
+    }
+
+    if (isTraining(item)) {
+      sessionStorage.setItem(
+        "currentTrainingSessionId",
+        String(id)
+      );
+
+      navigate("/training/results", {
+        state: {
+          sessionId: id
+        }
+      });
+
       return;
     }
 
@@ -294,132 +277,90 @@ export default function InterviewHistoryPage() {
       String(id)
     );
 
-    navigate(
-      "/interview/results",
-      {
-        state: {
-          interviewId: id,
-        },
+    navigate("/interview/results", {
+      state: {
+        interviewId: id
       }
-    );
+    });
   }
 
   function handleStartNew() {
     navigate("/interview/setup");
   }
 
-  const filteredInterviews =
-    interviews.filter(
-      (interview) => {
-        const role =
-          getRole(interview);
+  const filteredItems = items.filter((item) => {
+    const query = search.trim().toLowerCase();
 
-        const type =
-          getInterviewType(
-            interview
-          );
+    const searchableText = [
+      getRole(item),
+      getType(item),
+      getDifficulty(item)
+    ]
+      .join(" ")
+      .toLowerCase();
 
-        const query =
-          search
-            .trim()
-            .toLowerCase();
+    const matchesSearch =
+      !query ||
+      searchableText.includes(query);
 
-        const matchesSearch =
-          !query ||
-          String(role)
-            .toLowerCase()
-            .includes(query) ||
-          String(type)
-            .toLowerCase()
-            .includes(query);
+    const status = String(
+      getStatus(item)
+    ).toLowerCase();
 
-        const status =
-          String(
-            getStatus(interview)
-          ).toLowerCase();
+    let matchesFilter = true;
 
-        let matchesFilter = true;
+    if (filter === "completed") {
+      matchesFilter =
+        status === "completed" ||
+        status === "finished";
+    }
 
-        if (
-          filter === "completed"
-        ) {
-          matchesFilter =
-            status ===
-            "completed" ||
-            status === "finished";
-        }
+    if (filter === "processing") {
+      matchesFilter =
+        status === "processing" ||
+        status === "analyzing";
+    }
 
-        if (
-          filter === "processing"
-        ) {
-          matchesFilter =
-            status ===
-            "processing" ||
-            status === "analyzing";
-        }
+    if (filter === "in-progress") {
+      matchesFilter =
+        status === "in_progress" ||
+        status === "in-progress";
+    }
 
-        if (
-          filter === "in-progress"
-        ) {
-          matchesFilter =
-            status ===
-            "in_progress" ||
-            status ===
-            "in-progress";
-        }
+    return matchesSearch && matchesFilter;
+  });
 
-        return (
-          matchesSearch &&
-          matchesFilter
-        );
-      }
+  const completedCount = items.filter((item) => {
+    const status = String(
+      getStatus(item)
+    ).toLowerCase();
+
+    return (
+      status === "completed" ||
+      status === "finished"
     );
+  }).length;
 
-  const completedCount =
-    interviews.filter(
-      (item) => {
-        const status =
-          String(
-            getStatus(item)
-          ).toLowerCase();
+  const scores = items
+    .map((item) => getScore(item))
+    .filter((score) => score !== null);
 
-        return (
-          status === "completed" ||
-          status === "finished"
-        );
-      }
-    ).length;
-
-  const scoredInterviews =
-    interviews
-      .map((item) =>
-        getScore(item)
-      )
-      .filter(
-        (score) =>
-          score !== null
-      );
-
-  const averageScore =
-    scoredInterviews.length
-      ? Math.round(
-        scoredInterviews.reduce(
-          (sum, score) =>
-            sum + score,
+  const averageScore = scores.length
+    ? Math.round(
+        scores.reduce(
+          (total, score) => total + score,
           0
-        ) /
-        scoredInterviews.length
+        ) / scores.length
       )
-      : null;
+    : null;
 
   return (
     <main className="mobile-page history-page">
-      {/* Header */}
       <header className="history-header">
         <button
           type="button"
           className="back-btn"
-          onClick={handleBack}
+          onClick={() => navigate("/dashboard")}
         >
           ← Back
         </button>
@@ -429,80 +370,55 @@ export default function InterviewHistoryPage() {
             YOUR PROGRESS
           </div>
 
-          <h1>
-            Interview history
-          </h1>
+          <h1>History</h1>
 
           <p>
-            Review your previous interviews
-            and track your improvement.
+            Review your previous interviews and
+            training sessions.
           </p>
         </div>
       </header>
 
-      {/* Stats */}
       {!loading &&
         !error &&
-        interviews.length > 0 && (
+        items.length > 0 && (
           <section className="history-stats">
             <div className="history-stat">
-              <span>
-                Interviews
-              </span>
-
-              <strong>
-                {completedCount}
-              </strong>
-
-              <small>
-                completed
-              </small>
+              <span>Completed sessions</span>
+              <strong>{completedCount}</strong>
+              <small>sessions</small>
             </div>
 
             <div className="history-stat">
-              <span>
-                Average score
-              </span>
-
+              <span>Average score</span>
               <strong>
-                {averageScore ??
-                  "—"}
+                {averageScore ?? "—"}
               </strong>
-
-              <small>
-                out of 100
-              </small>
+              <small>out of 100</small>
             </div>
           </section>
         )}
 
-      {/* Search */}
       {!loading &&
         !error &&
-        interviews.length > 0 && (
+        items.length > 0 && (
           <section className="history-controls">
             <div className="history-search">
-              <span>
-                ⌕
-              </span>
+              <span>⌕</span>
 
               <input
                 type="search"
-                placeholder="Search interviews..."
+                placeholder="Search history..."
                 value={search}
                 onChange={(event) =>
-                  setSearch(
-                    event.target.value
-                  )
+                  setSearch(event.target.value)
                 }
               />
 
               {search && (
                 <button
                   type="button"
-                  onClick={() =>
-                    setSearch("")
-                  }
+                  onClick={() => setSearch("")}
                   aria-label="Clear search"
                 >
                   ×
@@ -511,343 +427,247 @@ export default function InterviewHistoryPage() {
             </div>
 
             <div className="history-filters">
-              <button
-                type="button"
-                className={
-                  filter === "all"
-                    ? "history-filter active"
-                    : "history-filter"
-                }
-                onClick={() =>
-                  setFilter("all")
-                }
-              >
-                All
-              </button>
-
-              <button
-                type="button"
-                className={
-                  filter ===
-                    "completed"
-                    ? "history-filter active"
-                    : "history-filter"
-                }
-                onClick={() =>
-                  setFilter(
-                    "completed"
-                  )
-                }
-              >
-                Completed
-              </button>
-
-              <button
-                type="button"
-                className={
-                  filter ===
-                    "processing"
-                    ? "history-filter active"
-                    : "history-filter"
-                }
-                onClick={() =>
-                  setFilter(
-                    "processing"
-                  )
-                }
-              >
-                Processing
-              </button>
+              {[
+                ["all", "All"],
+                ["completed", "Completed"],
+                ["processing", "Processing"],
+                
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={
+                    filter === value
+                      ? "history-filter active"
+                      : "history-filter"
+                  }
+                  onClick={() => setFilter(value)}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </section>
         )}
 
-      {/* Loading */}
       {loading && <PageLoader />}
 
-      {/* Error */}
       {!loading && error && (
         <section className="history-error">
-          <div className="empty-icon">
-            !
-          </div>
+          <div className="empty-icon">!</div>
 
-          <h2>
-            Couldn't load history
-          </h2>
+          <h2>Could not load history</h2>
 
-          <p>
-            {error}
-          </p>
+          <p>{error}</p>
 
           <button
             type="button"
             className="primary-btn"
-            onClick={() =>
-              window.location.reload()
-            }
+            onClick={() => window.location.reload()}
           >
             Try Again
           </button>
         </section>
       )}
 
-      {/* Empty */}
       {!loading &&
         !error &&
-        interviews.length === 0 && (
+        items.length === 0 && (
           <section className="history-empty">
             <div className="empty-history-icon">
               ◷
             </div>
 
             <div className="eyebrow">
-              NO INTERVIEWS YET
+              NO HISTORY YET
             </div>
 
-            <h2>
-              Your journey starts here
-            </h2>
+            <h2>Your journey starts here</h2>
 
             <p>
-              Complete your first AI interview
-              and your results will appear in
-              this section.
+              Complete an interview or training
+              session and your results will appear here.
             </p>
 
             <button
               type="button"
               className="primary-btn"
-              onClick={
-                handleStartNew
-              }
+              onClick={handleStartNew}
             >
-              Start Your First Interview
+              Start Practicing
               <span>→</span>
             </button>
           </section>
         )}
 
-      {/* No search results */}
       {!loading &&
         !error &&
-        interviews.length > 0 &&
-        filteredInterviews.length ===
-        0 && (
+        items.length > 0 &&
+        filteredItems.length === 0 && (
           <section className="history-empty compact">
             <div className="empty-history-icon">
               ⌕
             </div>
 
-            <h2>
-              No matching interviews
-            </h2>
+            <h2>No matching sessions</h2>
 
             <p>
-              Try changing your search or
-              filter.
+              Try changing your search or filter.
             </p>
-
           </section>
         )}
 
-      {/* Interview List */}
       {!loading &&
         !error &&
-        filteredInterviews.length >
-        0 && (
+        filteredItems.length > 0 && (
           <section className="history-list-section">
             <div className="section-heading">
               <div>
                 <span className="eyebrow">
-                  INTERVIEWS
+                  INTERVIEWS AND TRAINING
                 </span>
 
-                <h2>
-                  Your attempts
-                </h2>
+                <h2>Your attempts</h2>
               </div>
 
               <span className="history-count">
-                {filteredInterviews.length}
+                {filteredItems.length}
               </span>
             </div>
 
             <div className="history-list">
-              {filteredInterviews.map(
-                (
-                  interview,
-                  index
-                ) => {
-                  const id =
-                    getInterviewId(
-                      interview
-                    );
+              {filteredItems.map((item, index) => {
+                const id = getId(item);
+                const score = getScore(item);
+                const status = getStatus(item);
+                const training = isTraining(item);
 
-                  const score =
-                    getScore(
-                      interview
-                    );
+                return (
+                  <button
+                    type="button"
+                    className="history-card"
+                    key={id || index}
+                    onClick={() =>
+                      handleOpenItem(item)
+                    }
+                  >
+                    <div className="history-card-top">
+                      <div className="history-card-icon">
+                        <BriefcaseBusiness
+                          size={22}
+                          strokeWidth={2}
+                        />
+                      </div>
 
-                  const status =
-                    getStatus(
-                      interview
-                    );
+                      <div className="history-card-title">
+                        <h3>
+                          {formatLabel(
+                            getRole(item)
+                          )}
+                        </h3>
 
-                  const scoreClass =
-                    getScoreClass(
-                      score
-                    );
+                        <small className="history-item-kind">
+                          {training
+                            ? "Training"
+                            : "Interview"}
+                        </small>
 
-                  return (
-                    <button
-                      type="button"
-                      className="history-card"
-                      key={
-                        id ||
-                        index
-                      }
-                      onClick={() =>
-                        handleOpenInterview(
-                          interview
-                        )
-                      }
-                    >
-                      <div className="history-card-top">
-                        <div className="history-card-icon">
-                          <BriefcaseBusiness
-                            size={22}
-                            strokeWidth={2}
+                        <p>
+                          {getDate(item)}
+
+                          {getTime(item) && (
+                            <>
+                              {" · "}
+                              {getTime(item)}
+                            </>
+                          )}
+
+                          {training &&
+                            item.total_questions && (
+                              <>
+                                {" · "}
+                                {item.completed_questions || 0}
+                                /{item.total_questions} answered
+                              </>
+                            )}
+                        </p>
+                      </div>
+
+                      <span className="history-card-arrow">
+                        →
+                      </span>
+                    </div>
+
+                    <div className="history-card-divider" />
+
+                    <div className="history-card-meta">
+                      <span className="history-tag">
+                        {formatLabel(getType(item))}
+                      </span>
+
+                      <span className="history-tag">
+                        {formatLabel(
+                          getDifficulty(item)
+                        )}
+                      </span>
+
+                      <span
+                        className={
+                          `history-status ` +
+                          (status === "completed" ||
+                          status === "finished"
+                            ? "completed"
+                            : "")
+                        }
+                      >
+                        {getStatusLabel(status)}
+                      </span>
+                    </div>
+
+                    {score !== null && (
+                      <div className="history-score-row">
+                        <div>
+                          <span>Overall score</span>
+
+                          <strong
+                            className={getScoreClass(
+                              score
+                            )}
+                          >
+                            {score}
+                            <small>/100</small>
+                          </strong>
+                        </div>
+
+                        <div className="history-score-bar">
+                          <span
+                            style={{
+                              width: `${Math.min(
+                                Math.max(score, 0),
+                                100
+                              )}%`
+                            }}
                           />
                         </div>
-
-                        <div className="history-card-title">
-                          <h3>
-                            {formatLabel(
-                              getRole(
-                                interview
-                              )
-                            )}
-                          </h3>
-
-                          <p>
-                            {getDate(
-                              interview
-                            )}
-
-                            {getTime(
-                              interview
-                            ) && (
-                                <>
-                                  {" "}
-                                  ·{" "}
-                                  {getTime(
-                                    interview
-                                  )}
-                                </>
-                              )}
-                          </p>
-                        </div>
-
-                        <span className="history-card-arrow">
-                          →
-                        </span>
                       </div>
-
-                      <div className="history-card-divider" />
-
-                      <div className="history-card-meta">
-                        <span className="history-tag">
-                          {formatLabel(
-                            getInterviewType(
-                              interview
-                            )
-                          )}
-                        </span>
-
-                        <span className="history-tag">
-                          {formatLabel(
-                            getDifficulty(
-                              interview
-                            )
-                          )}
-                        </span>
-
-                        <span
-                          className={
-                            `history-status ` +
-                            (status ===
-                              "completed" ||
-                              status ===
-                              "finished"
-                              ? "completed"
-                              : "")
-                          }
-                        >
-                          {getStatusLabel(
-                            status
-                          )}
-                        </span>
-                      </div>
-
-                      {score !==
-                        null && (
-                          <div className="history-score-row">
-                            <div>
-                              <span>
-                                Overall score
-                              </span>
-
-                              <strong
-                                className={
-                                  scoreClass
-                                }
-                              >
-                                {score}
-                                <small>
-                                  /100
-                                </small>
-                              </strong>
-                            </div>
-
-                            <div className="history-score-bar">
-                              <span
-                                style={{
-                                  width: `${Math.min(
-                                    Math.max(
-                                      score,
-                                      0
-                                    ),
-                                    100
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                    </button>
-                  );
-                }
-              )}
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
 
-      {/* Start another */}
       {!loading &&
         !error &&
-        interviews.length > 0 && (
+        items.length > 0 && (
           <section className="history-bottom-cta">
-            <p>
-              Ready for another round?
-            </p>
+            <p>Ready for another round?</p>
 
             <button
               type="button"
               className="secondary-btn"
-              onClick={
-                handleStartNew
-              }
+              onClick={handleStartNew}
             >
               Start New Interview
               <span>→</span>
@@ -855,14 +675,11 @@ export default function InterviewHistoryPage() {
           </section>
         )}
 
-      {/* Bottom navigation */}
       <nav className="bottom-nav">
         <button
           type="button"
           className="bottom-nav-item"
-          onClick={() =>
-            navigate("/dashboard")
-          }
+          onClick={() => navigate("/dashboard")}
         >
           <span>⌂</span>
           <small>Home</small>
@@ -872,9 +689,7 @@ export default function InterviewHistoryPage() {
           type="button"
           className="bottom-nav-item active"
           onClick={() =>
-            navigate(
-              "/interview/history"
-            )
+            navigate("/interview/history")
           }
         >
           <span>◷</span>
@@ -884,23 +699,16 @@ export default function InterviewHistoryPage() {
         <button
           type="button"
           className="bottom-nav-item"
-          onClick={
-            handleStartNew
-          }
+          onClick={handleStartNew}
         >
-          <span className="nav-plus">
-            +
-          </span>
-
+          <span className="nav-plus">+</span>
           <small>Practice</small>
         </button>
 
         <button
           type="button"
           className="bottom-nav-item"
-          onClick={() =>
-            navigate("/settings")
-          }
+          onClick={() => navigate("/settings")}
         >
           <span>⚙</span>
           <small>Settings</small>

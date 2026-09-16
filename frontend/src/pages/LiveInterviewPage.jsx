@@ -778,7 +778,7 @@ ${questionText}
         );
 
         speakQuestion(`
-Thanks for explaining that. I would like to ask a follow-up question.
+Okay Now tell me a little more.
 
 ${followUp}
 

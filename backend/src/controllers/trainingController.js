@@ -25,6 +25,11 @@ async function createSession(
   next
 ) {
   try {
+    console.log(
+      "[TRAINING SESSION BODY]",
+      req.body
+    );
+
     const result =
       await trainingService.createSession(
         req.user.userId,
@@ -58,21 +63,7 @@ async function submitAnswer(
     next(error);
   }
 }
-async function createSession(req, res, next) {
-  try {
-    console.log("[TRAINING SESSION BODY]", req.body);
 
-    const result =
-      await trainingService.createSession(
-        req.user.userId,
-        req.body
-      );
-
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-}
 async function completeSession(
   req,
   res,
@@ -91,9 +82,47 @@ async function completeSession(
   }
 }
 
+async function stopSession(
+  req,
+  res,
+  next
+) {
+  try {
+    const session =
+      await trainingService.stopSession(
+        req.user.userId,
+        req.params.id
+      );
+
+    res.json(session);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getSessionReport(
+  req,
+  res,
+  next
+) {
+  try {
+    const report =
+      await trainingService.getSessionReport(
+        req.user.userId,
+        req.params.id
+      );
+
+    res.json(report);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getQuestions,
   createSession,
   submitAnswer,
-  completeSession
+  completeSession,
+  stopSession,
+  getSessionReport
 };

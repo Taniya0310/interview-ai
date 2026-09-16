@@ -287,50 +287,100 @@ async function getDayStreak(userId) {
   return streak;
 }
 async function listInterviews(userId) {
-  const result = await db.query(
-  `
-    SELECT
-      i.*,
+  const interviewResult = await db.query(
+    `
+      SELECT
+        i.*,
 
-      (
-        SELECT ROUND(
-          AVG((an.result->>'score')::numeric)
-        )
-        FROM interview_questions iq2
-        JOIN answers a2
-          ON a2.interview_question_id = iq2.id
-        JOIN analyses an
-          ON an.answer_id = a2.id
-        WHERE iq2.interview_id = i.id
-          AND an.result->>'score' IS NOT NULL
-      ) AS score,
+        'interview' AS type,
 
-      ROW_NUMBER() OVER (
-        PARTITION BY i.user_id
-        ORDER BY i.created_at ASC
-      ) AS interview_number,
+        (
+          SELECT ROUND(
+            AVG((an.result->>'score')::numeric)
+          )
+          FROM interview_questions iq2
+          JOIN answers a2
+            ON a2.interview_question_id = iq2.id
+          JOIN analyses an
+            ON an.answer_id = a2.id
+          WHERE iq2.interview_id = i.id
+            AND an.result->>'score' IS NOT NULL
+        ) AS score,
 
-      COUNT(iq.id) AS question_count,
+        ROW_NUMBER() OVER (
+          PARTITION BY i.user_id
+          ORDER BY i.created_at ASC
+        ) AS interview_number,
 
-      COUNT(iq.id) FILTER (
-        WHERE iq.is_satisfied = TRUE
-      ) AS completed_questions
+        COUNT(iq.id) AS question_count,
 
-    FROM interviews i
+        COUNT(iq.id) FILTER (
+          WHERE iq.is_satisfied = TRUE
+        ) AS completed_questions
 
-    LEFT JOIN interview_questions iq
-      ON iq.interview_id = i.id
+      FROM interviews i
 
-    WHERE i.user_id = $1
+      LEFT JOIN interview_questions iq
+        ON iq.interview_id = i.id
 
-    GROUP BY i.id
+      WHERE i.user_id = $1
 
-    ORDER BY i.created_at DESC
-  `,
-  [userId]
-);
+      GROUP BY i.id
 
-  return result.rows;
+      ORDER BY i.created_at DESC
+    `,
+    [userId]
+  );
+
+  const trainingResult = await db.query(
+    `
+      SELECT
+        ts.id,
+        'training' AS type,
+        'Voice Training' AS title,
+        ts.category_id,
+        tc.name AS category_name,
+        ts.difficulty,
+        ts.status,
+        ts.total_questions,
+        ts.completed_questions,
+        ts.started_at,
+        ts.completed_at,
+        ts.started_at AS created_at,
+
+        (
+          SELECT ROUND(
+            AVG(
+              COALESCE(
+                (ta.analysis->>'score')::numeric,
+                ta.score
+              )
+            )
+          )
+          FROM training_answers ta
+          WHERE ta.training_session_id = ts.id
+        ) AS score
+
+      FROM training_sessions ts
+
+      LEFT JOIN training_categories tc
+        ON tc.id = ts.category_id
+
+      WHERE ts.user_id = $1
+
+      ORDER BY ts.started_at DESC
+    `,
+    [userId]
+  );
+
+  const interviews = interviewResult.rows;
+  const trainings = trainingResult.rows;
+
+  return [...interviews, ...trainings].sort(
+    (first, second) =>
+      new Date(second.started_at) -
+      new Date(first.started_at)
+  );
 }
 async function heartbeat(id, userId) {
   const result = await db.query(
