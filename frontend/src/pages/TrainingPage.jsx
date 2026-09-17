@@ -35,7 +35,10 @@ export default function TrainingPage() {
 const { settings } = useSettings();
   const session = location.state?.session;
   const questions = location.state?.questions || [];
-
+const voiceId =
+  location.state?.voiceId ||
+  sessionStorage.getItem("trainingVoiceId") ||
+  "ryan";
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
@@ -262,13 +265,24 @@ setTimeout(() => {
       text: chunk,
     });
 
-    nativeTts.speakChunk(
-  chunk,
-  chunkId,
-  Number(settings.speech_speed ?? 0.90),
-  Number(settings.speech_pitch ?? 1),
-  Number(settings.speech_volume ?? 1)
-);
+   if (nativeTts.speakChunkWithVoice) {
+  nativeTts.speakChunkWithVoice(
+    chunk,
+    chunkId,
+    voiceId,
+    Number(settings.speech_speed ?? 0.90),
+    Number(settings.speech_pitch ?? 1),
+    Number(settings.speech_volume ?? 1)
+  );
+} else {
+  nativeTts.speakChunk(
+    chunk,
+    chunkId,
+    Number(settings.speech_speed ?? 0.90),
+    Number(settings.speech_pitch ?? 1),
+    Number(settings.speech_volume ?? 1)
+  );
+}
   });
 }, TTS_START_DELAY);
 

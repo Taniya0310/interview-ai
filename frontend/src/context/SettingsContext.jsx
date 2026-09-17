@@ -12,12 +12,12 @@ const SettingsContext = createContext(null);
 const defaultSettings = {
   minimum_passing_score: 60,
   follow_up_question_limit: 2,
-  speech_speed: 1,
+  speech_speed: 0.90,
   speech_pitch: 1,
   speech_volume: 1,
-  tts_chunk_size: 180,
+  tts_chunk_size: 5,
   silence_timeout_ms: 3000,
-  interview_duration_minutes: 30,
+  interview_duration_minutes: 15,
 };
 
 export function SettingsProvider({ children }) {

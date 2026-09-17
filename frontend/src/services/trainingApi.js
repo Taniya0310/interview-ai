@@ -18,8 +18,19 @@ async function getTrainingQuestions(
 async function createTrainingSession(
   categoryId,
   limit = 5,
-  difficulty = null
+  difficulty = null,
+  voiceId = "ryan"
 ) {
+  // Supports both:
+  // createTrainingSession(categoryId, voiceId)
+  // createTrainingSession(categoryId, limit, difficulty, voiceId)
+
+  if (typeof limit === "string") {
+    voiceId = limit;
+    limit = 5;
+    difficulty = null;
+  }
+
   return authenticatedFetch(
     "/training/sessions",
     {
@@ -27,7 +38,8 @@ async function createTrainingSession(
       body: JSON.stringify({
         categoryId,
         limit,
-        difficulty
+        difficulty,
+        voiceId
       })
     }
   );

@@ -40,7 +40,10 @@ export default function LiveInterviewPage() {
   
   const navigate = useNavigate();
   const { settings } = useSettings();
-
+const voiceId =
+  sessionStorage.getItem(
+    "currentInterviewVoiceId"
+  ) || "ryan";
   // -----------------------------
   // Interview
   // -----------------------------
@@ -450,13 +453,24 @@ ${questionText}
           text: chunk,
         });
 
-       nativeTts.speakChunk(
-  chunk,
-  chunkId,
-  TTS_RATE,
-  TTS_PITCH,
-  TTS_VOLUME
-);
+      if (nativeTts.speakChunkWithVoice) {
+  nativeTts.speakChunkWithVoice(
+    chunk,
+    chunkId,
+    voiceId,
+    TTS_RATE,
+    TTS_PITCH,
+    TTS_VOLUME
+  );
+} else {
+  nativeTts.speakChunk(
+    chunk,
+    chunkId,
+    TTS_RATE,
+    TTS_PITCH,
+    TTS_VOLUME
+  );
+}
       });
 
       const wordCount =

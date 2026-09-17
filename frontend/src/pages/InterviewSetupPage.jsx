@@ -17,17 +17,28 @@ import { useSettings } from "../context/SettingsContext";
 async function api(path, options = {}) {
   return authenticatedFetch(path, options);
 }
-
+const AI_VOICES = [
+  {
+    id: "ryan",
+    label: "Ryan",
+    gender: "Male"
+  },
+  {
+    id: "female",
+    label: "Female",
+    gender: "Female"
+  }
+];
 export default function InterviewSetupPage() {
   const navigate = useNavigate();
 const { settings } = useSettings();
 
 const interviewDuration = Number(
-  settings.interview_duration_minutes ?? 30
+  settings.interview_duration_minutes ?? 15
 );
   const [interviewType, setInterviewType] =
     useState("technical");
-
+const [voiceId, setVoiceId] = useState("ryan");
   const [domain, setDomain] = useState("");
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] =
@@ -51,7 +62,48 @@ const interviewDuration = Number(
 
     loadProfile();
   }, []);
+function previewVoice(voiceId) {
+  const text =
+    "Hello, I will be talking to you during your session.";
 
+  const nativeTts = window.AndroidTTS;
+
+  if (nativeTts?.speakChunkWithVoice) {
+    if (!nativeTts.isReady?.()) {
+      setError(
+        "Voice models are still preparing. Please try again shortly."
+      );
+      return;
+    }
+
+    nativeTts.stop?.();
+    nativeTts.clearQueue?.();
+
+    nativeTts.speakChunkWithVoice(
+      text,
+      `preview-${voiceId}`,
+      voiceId,
+      0.9,
+      1,
+      1
+    );
+
+    return;
+  }
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(text);
+
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    window.speechSynthesis.speak(utterance);
+  }
+}
   async function handleStart(event) {
     event.preventDefault();
 
@@ -81,12 +133,13 @@ const interviewDuration = Number(
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          interviewType,
-          domain:
-            interviewType === "technical"
-              ? domain
-              : null
-        })
+  interviewType,
+  domain:
+    interviewType === "technical"
+      ? domain
+      : null,
+  voiceId
+})
       });
 
       const interviewId =
@@ -109,7 +162,10 @@ const interviewDuration = Number(
         "currentInterviewId",
         String(interviewId)
       );
-
+sessionStorage.setItem(
+  "currentInterviewVoiceId",
+  voiceId
+);
       navigate("/interview/device-check");
     } catch (requestError) {
       console.error(
@@ -295,7 +351,60 @@ const interviewDuration = Number(
             </button>
           </div>
         </section>
+<section className="setup-section">
+  <div className="section-heading">
+    <span className="eyebrow">STEP 02</span>
 
+    <h2>Interview voice</h2>
+
+    <p>
+      Select the voice that will ask your interview
+      questions.
+    </p>
+  </div>
+
+ <div className="setup-option-grid">
+  {AI_VOICES.map((voice) => (
+    <div
+      key={voice.id}
+      className={
+        voiceId === voice.id
+          ? "setup-option active"
+          : "setup-option"
+      }
+    >
+      <button
+        type="button"
+        className="voice-select-button"
+        onClick={() => setVoiceId(voice.id)}
+        disabled={loading}
+      >
+        <span className="setup-option-icon">
+          {voice.id === "female" ? "♀" : "♂"}
+        </span>
+
+        <span className="setup-option-content">
+          <strong>{voice.label}</strong>
+          <small>{voice.gender} voice</small>
+        </span>
+
+        <span className="setup-option-check">
+          {voiceId === voice.id ? "✓" : ""}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        className="voice-preview-button"
+        onClick={() => previewVoice(voice.id)}
+        disabled={loading}
+      >
+        Hear voice
+      </button>
+    </div>
+  ))}
+</div>
+</section>
         {interviewType === "technical" &&
           !profileLoading &&
           !domain && (

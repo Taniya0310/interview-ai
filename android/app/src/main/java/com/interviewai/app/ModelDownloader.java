@@ -22,57 +22,77 @@ public final class ModelDownloader {
 
     private static final String TAG = "OfflineTTS";
 
-    private static final String MODEL_FOLDER =
-            "vits-piper-en_US-ryan-medium";
+    public static final String RYAN_VOICE_ID = "ryan";
+    public static final String FEMALE_VOICE_ID = "female";
 
-    private static final String MODEL_URL =
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/"
-                    + "tts-models/vits-piper-en_US-ryan-medium.tar.bz2";
+    private static final ModelSpec RYAN_MODEL =
+            new ModelSpec(
+                    RYAN_VOICE_ID,
+                    "vits-piper-en_US-ryan-medium",
+                    "en_US-ryan-medium.onnx",
+                    "https://github.com/k2-fsa/sherpa-onnx/releases/download/"
+                            + "tts-models/vits-piper-en_US-ryan-medium.tar.bz2"
+            );
+
+    private static final ModelSpec FEMALE_MODEL =
+            new ModelSpec(
+                    FEMALE_VOICE_ID,
+                    "vits-piper-en_US-hfc_female-medium",
+                    "en_US-hfc_female-medium.onnx",
+                    "https://github.com/k2-fsa/sherpa-onnx/releases/download/"
+                            + "tts-models/vits-piper-en_US-hfc_female-medium.tar.bz2"
+            );
 
     private final Context context;
 
-   public interface DownloadListener {
-    void onStarted();
+    public interface DownloadListener {
+        void onStarted();
 
-    void onProgress(int percent);
+        void onProgress(int percent);
 
-    void onExtracting();
+        void onExtracting();
 
-    void onCompleted();
+        void onCompleted();
 
-    void onError(Exception error);
-}
+        void onError(Exception error);
+    }
+
     public ModelDownloader(Context context) {
         this.context = context.getApplicationContext();
     }
 
+    // Keeps compatibility with the existing Ryan code.
     public File getModelDirectory() {
+        return getModelDirectory(RYAN_VOICE_ID);
+    }
+
+    public File getModelDirectory(String voiceId) {
+        ModelSpec model = getModelSpec(voiceId);
+
         File modelsDirectory =
                 new File(context.getFilesDir(), "models");
 
-        return new File(modelsDirectory, MODEL_FOLDER);
+        return new File(modelsDirectory, model.folderName);
     }
 
+    // Both models must be ready before TTS is marked ready.
     public boolean isModelReady() {
-        File modelDirectory = getModelDirectory();
+        return isModelReady(RYAN_VOICE_ID)
+                && isModelReady(FEMALE_VOICE_ID);
+    }
+
+    public boolean isModelReady(String voiceId) {
+        ModelSpec model = getModelSpec(voiceId);
+        File modelDirectory = getModelDirectory(voiceId);
 
         File modelFile =
-                new File(
-                        modelDirectory,
-                        "en_US-ryan-medium.onnx"
-                );
+                new File(modelDirectory, model.onnxFileName);
 
         File tokensFile =
-                new File(
-                        modelDirectory,
-                        "tokens.txt"
-                );
+                new File(modelDirectory, "tokens.txt");
 
         File espeakDirectory =
-                new File(
-                        modelDirectory,
-                        "espeak-ng-data"
-                );
+                new File(modelDirectory, "espeak-ng-data");
 
         return modelFile.isFile()
                 && tokensFile.isFile()
@@ -87,16 +107,6 @@ public final class ModelDownloader {
     public File downloadAndExtract(
             DownloadListener listener
     ) throws IOException {
-
-        if (isModelReady()) {
-            Log.i(TAG, "MODEL_ALREADY_EXISTS");
-
-            if (listener != null) {
-                listener.onCompleted();
-            }
-
-            return getModelDirectory();
-        }
 
         try {
             if (listener != null) {
@@ -116,72 +126,40 @@ public final class ModelDownloader {
                 );
             }
 
-            File archive = new File(
-                    context.getFilesDir(),
-                    MODEL_FOLDER + ".tar.bz2"
-            );
-
-            Log.i(TAG, "MODEL_DOWNLOAD_START");
-
-            downloadArchive(
-                    archive,
+            downloadModel(
+                    RYAN_MODEL,
+                    0,
                     listener
             );
 
-            Log.i(
-                    TAG,
-                    "MODEL_DOWNLOAD_COMPLETE bytes="
-                            + archive.length()
+            downloadModel(
+                    FEMALE_MODEL,
+                    50,
+                    listener
             );
 
-            deleteRecursively(
-                    getModelDirectory()
-            );
+            if (listener != null) {
+                listener.onExtracting();
+            }
 
-            Log.i(
-                    TAG,
-                    "MODEL_EXTRACTION_START"
-            );
-if (listener != null) {
-    listener.onExtracting();
-}
-            extractArchive(
-                    archive,
-                    modelsDirectory
-            );
-
-            Log.i(
-                    TAG,
-                    "MODEL_EXTRACTION_COMPLETE"
-            );
-
-            if (!isModelReady()) {
+            if (!isModelReady(RYAN_VOICE_ID)
+                    || !isModelReady(FEMALE_VOICE_ID)) {
                 throw new IOException(
-                        "Required model files are missing"
+                        "Required voice model files are missing"
                 );
             }
 
-            if (!archive.delete()) {
-                Log.w(
-                        TAG,
-                        "MODEL_ARCHIVE_DELETE_FAILED"
-                );
-            }
-
-            Log.i(TAG, "MODEL_FILES_VALID");
+            Log.i(TAG, "ALL_MODEL_FILES_VALID");
 
             if (listener != null) {
                 listener.onCompleted();
             }
 
-            return getModelDirectory();
+            // Existing OfflineTtsManager expects the Ryan directory.
+            return getModelDirectory(RYAN_VOICE_ID);
 
         } catch (IOException error) {
-            Log.e(
-                    TAG,
-                    "MODEL_ERROR",
-                    error
-            );
+            Log.e(TAG, "MODEL_ERROR", error);
 
             if (listener != null) {
                 listener.onError(error);
@@ -191,15 +169,94 @@ if (listener != null) {
         }
     }
 
+    private void downloadModel(
+            ModelSpec model,
+            int progressOffset,
+            DownloadListener listener
+    ) throws IOException {
+
+        if (isModelReady(model.voiceId)) {
+            Log.i(
+                    TAG,
+                    "MODEL_ALREADY_EXISTS voice="
+                            + model.voiceId
+            );
+
+            if (listener != null) {
+                listener.onProgress(
+                        progressOffset + 50
+                );
+            }
+
+            return;
+        }
+
+        File modelsDirectory =
+                new File(
+                        context.getFilesDir(),
+                        "models"
+                );
+
+        File archive =
+                new File(
+                        context.getFilesDir(),
+                        model.folderName + ".tar.bz2"
+                );
+
+        Log.i(
+                TAG,
+                "MODEL_DOWNLOAD_START voice="
+                        + model.voiceId
+        );
+
+        downloadArchive(
+                model,
+                archive,
+                progressOffset,
+                listener
+        );
+
+        deleteRecursively(
+                getModelDirectory(model.voiceId)
+        );
+
+        extractArchive(
+                archive,
+                modelsDirectory
+        );
+
+        if (!isModelReady(model.voiceId)) {
+            throw new IOException(
+                    "Required files are missing for voice: "
+                            + model.voiceId
+            );
+        }
+
+        if (!archive.delete()) {
+            Log.w(
+                    TAG,
+                    "MODEL_ARCHIVE_DELETE_FAILED voice="
+                            + model.voiceId
+            );
+        }
+
+        Log.i(
+                TAG,
+                "MODEL_READY voice="
+                        + model.voiceId
+        );
+    }
+
     private void downloadArchive(
+            ModelSpec model,
             File destination,
+            int progressOffset,
             DownloadListener listener
     ) throws IOException {
 
         HttpURLConnection connection =
                 (HttpURLConnection)
-                        new URL(MODEL_URL)
-                                .openConnection();
+                        new URL(model.url).openConnection();
 
         connection.setConnectTimeout(20_000);
         connection.setReadTimeout(120_000);
@@ -214,7 +271,9 @@ if (listener != null) {
             if (responseCode < 200
                     || responseCode >= 300) {
                 throw new IOException(
-                        "Download failed. HTTP status: "
+                        "Download failed for "
+                                + model.voiceId
+                                + ". HTTP status: "
                                 + responseCode
                 );
             }
@@ -255,27 +314,37 @@ if (listener != null) {
                     downloadedBytes += bytesRead;
 
                     if (totalBytes > 0) {
-                        int percent =
+                        int modelPercent =
                                 (int) (
                                         downloadedBytes
                                                 * 100
                                                 / totalBytes
                                 );
 
-                        if (percent != lastReportedPercent) {
+                        if (modelPercent
+                                != lastReportedPercent) {
+
                             lastReportedPercent =
-                                    percent;
+                                    modelPercent;
+
+                            int overallPercent =
+                                    progressOffset
+                                            + (
+                                                    modelPercent
+                                                            / 2
+                                            );
 
                             Log.i(
                                     TAG,
-                                    "MODEL_DOWNLOAD_PROGRESS "
-                                            + percent
-                                            + "%"
+                                    "MODEL_DOWNLOAD_PROGRESS voice="
+                                            + model.voiceId
+                                            + " percent="
+                                            + modelPercent
                             );
 
                             if (listener != null) {
                                 listener.onProgress(
-                                        percent
+                                        overallPercent
                                 );
                             }
                         }
@@ -296,9 +365,7 @@ if (listener != null) {
         try (
                 InputStream fileInput =
                         new BufferedInputStream(
-                                new FileInputStream(
-                                        archive
-                                )
+                                new FileInputStream(archive)
                         );
 
                 BZip2CompressorInputStream bz2Input =
@@ -381,10 +448,7 @@ if (listener != null) {
     ) throws IOException {
 
         String safePath =
-                archivePath.replace(
-                        '\\',
-                        '/'
-                );
+                archivePath.replace('\\', '/');
 
         File outputFile =
                 new File(
@@ -409,16 +473,21 @@ if (listener != null) {
         return outputFile;
     }
 
-    private static void deleteRecursively(
-            File file
-    ) {
+    private ModelSpec getModelSpec(String voiceId) {
+        if (FEMALE_VOICE_ID.equalsIgnoreCase(voiceId)) {
+            return FEMALE_MODEL;
+        }
+
+        return RYAN_MODEL;
+    }
+
+    private static void deleteRecursively(File file) {
         if (!file.exists()) {
             return;
         }
 
         if (file.isDirectory()) {
-            File[] children =
-                    file.listFiles();
+            File[] children = file.listFiles();
 
             if (children != null) {
                 for (File child : children) {
@@ -433,6 +502,25 @@ if (listener != null) {
                     "Could not delete "
                             + file.getAbsolutePath()
             );
+        }
+    }
+
+    private static final class ModelSpec {
+        final String voiceId;
+        final String folderName;
+        final String onnxFileName;
+        final String url;
+
+        ModelSpec(
+                String voiceId,
+                String folderName,
+                String onnxFileName,
+                String url
+        ) {
+            this.voiceId = voiceId;
+            this.folderName = folderName;
+            this.onnxFileName = onnxFileName;
+            this.url = url;
         }
     }
 }

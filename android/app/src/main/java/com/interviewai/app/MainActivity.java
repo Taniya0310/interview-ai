@@ -372,37 +372,62 @@ public void startModelCheck() {
         }
     });
 }
-        @JavascriptInterface
-       public void speakChunk(
+       
+      @JavascriptInterface
+public void speakChunk(
         String text,
         String chunkId,
         float speechRate,
         float speechPitch,
         float speechVolume
 ) {
-            Log.d(
-                    TAG,
-                    "SPEAK_REQUEST id="
-                            + chunkId
-                            + " words="
-                            + countWords(text)
-            );
+    speakChunkWithVoice(
+            text,
+            chunkId,
+            ModelDownloader.RYAN_VOICE_ID,
+            speechRate,
+            speechPitch,
+            speechVolume
+    );
+}
 
-            if (offlineTtsManager == null
-                    || !offlineTtsManager.isReady()) {
-                Log.w(TAG, "SPEAK_REQUEST_IGNORED_TTS_NOT_READY");
-                return;
-            }
+@JavascriptInterface
+public void speakChunkWithVoice(
+        String text,
+        String chunkId,
+        String voiceId,
+        float speechRate,
+        float speechPitch,
+        float speechVolume
+) {
+    Log.d(
+            TAG,
+            "SPEAK_REQUEST id="
+                    + chunkId
+                    + " voice="
+                    + voiceId
+                    + " words="
+                    + countWords(text)
+    );
 
-            offlineTtsManager.enqueue(
-        text,
-        chunkId,
-        speechRate,
-        speechPitch,
-        speechVolume
-);
-        }
+    if (offlineTtsManager == null
+            || !offlineTtsManager.isReady()) {
+        Log.w(
+                TAG,
+                "SPEAK_REQUEST_IGNORED_TTS_NOT_READY"
+        );
+        return;
+    }
 
+    offlineTtsManager.enqueue(
+            text,
+            chunkId,
+            voiceId,
+            speechRate,
+            speechPitch,
+            speechVolume
+    );
+}
         @JavascriptInterface
         public void stop() {
             Log.i(TAG, "TTS_STOP_REQUEST");
