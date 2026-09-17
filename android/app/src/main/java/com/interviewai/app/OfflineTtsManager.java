@@ -37,7 +37,8 @@ public final class OfflineTtsManager {
     private final AtomicBoolean ready =
             new AtomicBoolean(false);
 
-    private volatile OfflineTts offlineTts;
+    private volatile OfflineTts ryanTts;
+private volatile OfflineTts femaleTts;
     private volatile AudioTrack audioTrack;
 
     private Thread initializationThread;
@@ -51,7 +52,9 @@ public final class OfflineTtsManager {
                 );
     }
 
-    public void initialize(ModelDownloader.DownloadListener listener) {
+   public void initialize(
+        ModelDownloader.DownloadListener listener
+) {
     initializationThread =
             new Thread(
                     () -> {
@@ -61,87 +64,46 @@ public final class OfflineTtsManager {
                                     "TTS_INITIALIZATION_START"
                             );
 
-                            if (listener != null) {
-                                listener.onStarted();
-                            }
-
-                            File modelDirectory =
+                            
                                     modelDownloader.downloadAndExtract(
                                             listener
                                     );
 
-                            if (listener != null) {
-                                listener.onCompleted();
-                            }
-
-                            String dataDirectory =
-                                    new File(
-                                            modelDirectory,
-                                            "espeak-ng-data"
-                                    ).getAbsolutePath();
-
-                            Log.i(
-                                    TAG,
-                                    "MODEL_PATH="
-                                            + new File(
-                                                    modelDirectory,
-                                                    "en_US-ryan-medium.onnx"
-                                            ).getAbsolutePath()
-                            );
-
-                            Log.i(
-                                    TAG,
-                                    "TOKENS_PATH="
-                                            + new File(
-                                                    modelDirectory,
-                                                    "tokens.txt"
-                                            ).getAbsolutePath()
-                            );
-
-                            Log.i(
-                                    TAG,
-                                    "DATA_DIRECTORY="
-                                            + dataDirectory
-                            );
-
-                            OfflineTtsConfig config =
-                                    TtsKt.getOfflineTtsConfig(
-                                            modelDirectory
-                                                    .getAbsolutePath(),
-                                            "en_US-ryan-medium.onnx",
-                                            "",
-                                            "",
-                                            "",
-                                            "tokens.txt",
-                                            dataDirectory,
-                                            "",
-                                            "",
-                                            "",
-                                            1,
-                                            false,
-                                            false,
-                                            "",
-                                            "",
-                                            "",
-                                            "",
-                                            "",
-                                            "",
-                                            ""
+                            File ryanDirectory =
+                                    modelDownloader.getModelDirectory(
+                                            ModelDownloader.RYAN_VOICE_ID
                                     );
 
-                            offlineTts =
-                                    new OfflineTts(
-                                            null,
-                                            config
+                            File femaleDirectory =
+                                    modelDownloader.getModelDirectory(
+                                            ModelDownloader.FEMALE_VOICE_ID
+                                    );
+
+                            ryanTts =
+                                    createEngine(
+                                            ryanDirectory,
+                                            "en_US-ryan-medium.onnx"
+                                    );
+
+                            femaleTts =
+                                    createEngine(
+                                            femaleDirectory,
+                                            "en_US-hfc_female-medium.onnx"
                                     );
 
                             int sampleRate =
-                                    offlineTts.sampleRate();
+                                    ryanTts.sampleRate();
 
                             Log.i(
                                     TAG,
-                                    "PIPER_MODEL_READY sampleRate="
-                                            + sampleRate
+                                    "RYAN_MODEL_READY path="
+                                            + ryanDirectory
+                            );
+
+                            Log.i(
+                                    TAG,
+                                    "FEMALE_MODEL_READY path="
+                                            + femaleDirectory
                             );
 
                             createAudioTrack(sampleRate);
@@ -170,54 +132,101 @@ public final class OfflineTtsManager {
 
     initializationThread.start();
 }
-    public boolean isReady() {
-        return ready.get();
-    }
 
-   public void enqueue(
+private OfflineTts createEngine(
+        File modelDirectory,
+        String modelFileName
+) {
+    String dataDirectory =
+            new File(
+                    modelDirectory,
+                    "espeak-ng-data"
+            ).getAbsolutePath();
+
+    OfflineTtsConfig config =
+            TtsKt.getOfflineTtsConfig(
+                    modelDirectory.getAbsolutePath(),
+                    modelFileName,
+                    "",
+                    "",
+                    "",
+                    "tokens.txt",
+                    dataDirectory,
+                    "",
+                    "",
+                    "",
+                    1,
+                    false,
+                    false,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    ""
+            );
+
+    return new OfflineTts(
+            null,
+            config
+    );
+}
+
+public boolean isReady() {
+    return ready.get()
+            && ryanTts != null
+            && femaleTts != null;
+}
+public void enqueue(
         String text,
         String chunkId,
         float speechRate,
         float speechPitch,
         float speechVolume
 ) {
-        if (text == null || text.trim().isEmpty()) {
-            return;
-        }
-
-        if (!isReady()) {
-            Log.w(
-                    TAG,
-                    "TTS_NOT_READY id=" + chunkId
-            );
-            return;
-        }
-
-        long enqueueTime =
-                System.nanoTime();
-
-        generationQueue.offer(
-                new TtsJob(
-        text.trim(),
-        chunkId,
-        enqueueTime,
-        speechRate,
-        speechPitch,
-        speechVolume
-)
-        );
-
-        Log.d(
-                TAG,
-                "TIMING_ENQUEUE id="
-                        + chunkId
-                        + " words="
-                        + countWords(text)
-                        + " queue="
-                        + generationQueue.size()
-        );
+    enqueue(
+            text,
+            chunkId,
+            ModelDownloader.RYAN_VOICE_ID,
+            speechRate,
+            speechPitch,
+            speechVolume
+    );
+}
+ public void enqueue(
+        String text,
+        String chunkId,
+        String voiceId,
+        float speechRate,
+        float speechPitch,
+        float speechVolume
+) {
+    if (text == null || text.trim().isEmpty()) {
+        return;
     }
 
+    if (!isReady()) {
+        Log.w(TAG, "TTS_NOT_READY id=" + chunkId);
+        return;
+    }
+
+    if (!ModelDownloader.FEMALE_VOICE_ID.equalsIgnoreCase(voiceId)) {
+        voiceId = ModelDownloader.RYAN_VOICE_ID;
+    }
+
+    generationQueue.offer(
+            new TtsJob(
+                    text.trim(),
+                    chunkId,
+                    voiceId,
+                    System.nanoTime(),
+                    speechRate,
+                    speechPitch,
+                    speechVolume
+            )
+    );
+}
     public void stop() {
         Log.i(TAG, "TTS_STOP");
 
@@ -333,7 +342,12 @@ public final class OfflineTtsManager {
                     continue;
                 }
 
-                OfflineTts engine = offlineTts;
+                OfflineTts engine =
+        ModelDownloader.FEMALE_VOICE_ID.equalsIgnoreCase(
+                job.voiceId
+        )
+                ? femaleTts
+                : ryanTts;
 
                 if (engine == null) {
                     Log.w(
@@ -631,12 +645,18 @@ value = Math.max(
             audioTrack = null;
         }
 
-        OfflineTts engine = offlineTts;
+       OfflineTts ryanEngine = ryanTts;
+OfflineTts femaleEngine = femaleTts;
 
-        if (engine != null) {
-            engine.release();
-            offlineTts = null;
-        }
+if (ryanEngine != null) {
+    ryanEngine.release();
+    ryanTts = null;
+}
+
+if (femaleEngine != null) {
+    femaleEngine.release();
+    femaleTts = null;
+}
 
         Log.i(TAG, "TTS_DESTROYED");
     }
@@ -661,30 +681,33 @@ value = Math.max(
         return Math.round(value * 100.0) / 100.0;
     }
 
-    private static final class TtsJob {
-        final String text;
-        final String id;
-        final long enqueueTime;
-final float speechRate;
-final float speechPitch;
-final float speechVolume;
-        TtsJob(
-                String text,
-                String id,
-                long enqueueTime,
-                float speechRate,
-                float speechPitch,
-                float speechVolume
-        ) {
-            this.text = text;
-            this.id = id;
-            this.enqueueTime = enqueueTime;
-            this.speechRate = speechRate;
-            this.speechPitch = speechPitch;
-            this.speechVolume = speechVolume;
-        }
-    }
+  private static final class TtsJob {
+    final String text;
+    final String id;
+    final String voiceId;
+    final long enqueueTime;
+    final float speechRate;
+    final float speechPitch;
+    final float speechVolume;
 
+    TtsJob(
+            String text,
+            String id,
+            String voiceId,
+            long enqueueTime,
+            float speechRate,
+            float speechPitch,
+            float speechVolume
+    ) {
+        this.text = text;
+        this.id = id;
+        this.voiceId = voiceId;
+        this.enqueueTime = enqueueTime;
+        this.speechRate = speechRate;
+        this.speechPitch = speechPitch;
+        this.speechVolume = speechVolume;
+    }
+}
     private static final class AudioChunk {
         final String id;
         final short[] samples;
