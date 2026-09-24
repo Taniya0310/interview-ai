@@ -8,6 +8,8 @@ import {
   CircleHelp,
   Code2,
   MessageCircle,
+  AudioWaveform,
+  MicVocal,
   Shuffle,
   Video
 } from "lucide-react";
@@ -380,7 +382,11 @@ sessionStorage.setItem(
         disabled={loading}
       >
         <span className="setup-option-icon">
-          {voice.id === "female" ? "♀" : "♂"}
+          {voice.id === "female" ? (
+            <AudioWaveform aria-hidden="true" />
+          ) : (
+            <MicVocal aria-hidden="true" />
+          )}
         </span>
 
         <span className="setup-option-content">

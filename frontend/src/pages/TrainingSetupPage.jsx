@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BriefcaseBusiness} from "lucide-react";
+import {
+  AudioWaveform,
+  BriefcaseBusiness,
+  MicVocal,
+} from "lucide-react";
 
 import {
   getTrainingCategories,
@@ -262,7 +266,11 @@ sessionStorage.setItem(
         disabled={starting}
       >
         <span className="setup-option-icon">
-          {voice.id === "female" ? "♀" : "♂"}
+          {voice.id === "female" ? (
+            <AudioWaveform aria-hidden="true" />
+          ) : (
+            <MicVocal aria-hidden="true" />
+          )}
         </span>
 
         <span className="setup-option-content">

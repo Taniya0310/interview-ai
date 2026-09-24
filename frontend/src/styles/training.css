@@ -1253,3 +1253,188 @@
   background: #6254e7;
   color: #ffffff;
 }
+
+/* Keep the training voice choices readable on narrow screens. */
+.training-page .setup-option-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100%;
+  overflow: visible !important;
+}
+
+.training-page .setup-option {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 142px !important;
+  height: auto !important;
+  padding: 11px 10px 12px !important;
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.training-page .voice-select-button {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.training-page .setup-option-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #f1f2f4;
+  color: #667085;
+}
+
+.training-page .setup-option-icon svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.25;
+}
+
+.training-page .setup-option.active .setup-option-icon {
+  background: #ed6508;
+  color: #ffffff;
+}
+
+.training-page .setup-option.active .setup-option-check {
+  color: #ed6508;
+}
+
+.training-page .setup-option-content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.training-page .setup-option-content strong,
+.training-page .setup-option-content small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.training-page .setup-option-content strong {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.training-page .setup-option-content small {
+  margin-top: 3px;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.training-page .setup-option-check {
+  flex: 0 0 auto;
+  font-size: 18px;
+}
+
+.training-page .voice-preview-button {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-color: #ff7a18;
+  border-radius: 9px;
+  color: #d95708;
+  font-size: 13px;
+}
+
+.training-page .voice-preview-button:hover {
+  border-color: #ed6508;
+  background: #fff1e6;
+  color: #c2410c;
+}
+
+/* Keep the live training header balanced on mobile. */
+.training-page .training-heading-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.training-page .training-heading-row > div {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  min-width: 0;
+}
+
+.training-page .training-heading-row h1 {
+  max-width: 100%;
+  font-size: clamp(26px, 8vw, 36px);
+  line-height: 1.08;
+  overflow-wrap: normal;
+}
+
+.training-page .training-stop-button {
+  grid-column: 2;
+  grid-row: 1;
+  width: auto !important;
+  min-width: 116px;
+  min-height: 44px;
+  padding: 0 14px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.training-page .training-progress {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+@media (max-width: 380px) {
+  .training-page .training-heading-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .training-page .training-stop-button {
+    min-width: 108px;
+    min-height: 42px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .training-page .training-heading-row h1 {
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 380px) {
+  .training-page .setup-option-grid {
+    gap: 7px !important;
+  }
+
+  .training-page .setup-option {
+    min-height: 136px !important;
+    padding: 10px 8px 11px !important;
+  }
+
+  .training-page .setup-option-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .training-page .setup-option-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .training-page .setup-option-content strong {
+    font-size: 17px;
+  }
+
+  .training-page .setup-option-content small {
+    font-size: 13px;
+  }
+}

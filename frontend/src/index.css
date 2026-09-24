@@ -5642,3 +5642,176 @@ body {
   font-weight: 700;
 }
 
+/* Refined progress summary cards. */
+.history-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 22px !important;
+}
+
+.history-stat {
+  position: relative;
+  min-height: 94px;
+  padding: 16px 16px 14px !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid #f2d8c5 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, #fffaf6, #fff3e8) !important;
+  box-shadow: 0 8px 20px rgba(205, 106, 35, 0.1) !important;
+}
+
+.history-stat::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #f26b21;
+}
+
+.history-stat span {
+  margin: 0 !important;
+  color: #8b6b59 !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.history-stat strong {
+  margin-top: 5px;
+  color: #1f2937 !important;
+  font-size: 26px !important;
+  line-height: 1;
+}
+
+.history-stat small {
+  display: block;
+  margin-top: 5px;
+  color: #4b5563;
+  font-size: 12px;
+}
+
+@media (max-width: 380px) {
+  .history-stats {
+    gap: 8px !important;
+  }
+
+  .history-stat {
+    min-height: 88px;
+    padding: 13px 12px 12px !important;
+  }
+
+  .history-stat span {
+    font-size: 10px !important;
+  }
+
+  .history-stat strong {
+    font-size: 23px !important;
+  }
+}
+
+/* Compact interview voice cards for mobile. */
+.interview-setup-page .setup-form > .setup-section:first-child .setup-option-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.interview-setup-page .setup-form > .setup-section:first-child .setup-option {
+  min-height: 142px !important;
+  padding: 11px 10px 12px !important;
+}
+
+.interview-setup-page .setup-option-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.interview-setup-page .setup-option {
+  min-height: 142px !important;
+  height: auto !important;
+  padding: 11px 10px 12px !important;
+  align-items: stretch !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+.interview-setup-page .voice-select-button {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  gap: 8px;
+  text-align: left;
+}
+
+.interview-setup-page .setup-option-icon {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px;
+  background: #f1f2f4;
+  color: #667085;
+}
+
+.interview-setup-page .setup-option.active .setup-option-icon {
+  background: #ed6508;
+  color: #ffffff;
+}
+
+.interview-setup-page .setup-option-icon svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.25;
+}
+
+.interview-setup-page .setup-option-content {
+  min-width: 0;
+  overflow: hidden !important;
+  text-align: left !important;
+}
+
+.interview-setup-page .setup-option-content strong,
+.interview-setup-page .setup-option-content small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interview-setup-page .setup-option-content strong {
+  font-size: 18px !important;
+}
+
+.interview-setup-page .setup-option-content small {
+  margin-top: 3px !important;
+  font-size: 14px !important;
+}
+
+.interview-setup-page .setup-option-check {
+  flex: 0 0 auto;
+  color: #ed6508;
+}
+
+.interview-setup-page .voice-preview-button {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px;
+  border-color: #ff7a18;
+  border-radius: 9px;
+  color: #d95708;
+  font-size: 13px;
+}
+
+@media (max-width: 380px) {
+  .interview-setup-page .setup-option {
+    min-height: 136px !important;
+    padding: 10px 8px 11px !important;
+  }
+
+  .interview-setup-page .setup-option-content strong {
+    font-size: 17px !important;
+  }
+
+  .interview-setup-page .setup-option-content small {
+    font-size: 13px !important;
+  }
+}
+

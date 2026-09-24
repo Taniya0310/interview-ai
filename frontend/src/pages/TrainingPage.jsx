@@ -600,14 +600,6 @@ async function handleStopTraining() {
     return;
   }
 
-  const shouldStop = window.confirm(
-    "Are you sure you want to stop this training?"
-  );
-
-  if (!shouldStop) {
-    return;
-  }
-
   try {
     stoppingTrainingRef.current = true;
     setSubmitting(true);
