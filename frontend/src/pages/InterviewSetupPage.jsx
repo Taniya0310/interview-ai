@@ -16,7 +16,7 @@ import BottomNav from "../components/BottomNav";
 import { useSettings } from "../context/SettingsContext";
 async function api(path, options = {}) {
   return authenticatedFetch(path, options);
-}
+} 
 const AI_VOICES = [
   {
     id: "ryan",
