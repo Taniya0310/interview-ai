@@ -5815,3 +5815,152 @@ body {
   }
 }
 
+/* Compact interview setup: keep the complete form visible on mobile. */
+.interview-setup-page {
+  min-height: 100svh;
+  height: 100svh;
+  padding: 8px 14px 72px !important;
+  overflow: hidden !important;
+}
+
+.interview-setup-page .setup-header {
+  margin: 0;
+}
+
+.interview-setup-page .back-btn {
+  padding: 2px 0;
+  font-size: 11px;
+}
+
+.interview-setup-page .page-header {
+  margin-top: 4px;
+}
+
+.interview-setup-page .page-header .eyebrow {
+  display: none;
+}
+
+.interview-setup-page .page-header h1 {
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.interview-setup-page .page-header p {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.interview-setup-page .setup-meta-card {
+  margin: 10px 0 12px;
+  padding: 7px 4px !important;
+  border-radius: 14px !important;
+}
+
+.interview-setup-page .setup-meta-item {
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.interview-setup-page .setup-meta-icon {
+  width: 27px;
+  height: 27px;
+  margin-bottom: 0;
+}
+
+.interview-setup-page .setup-meta-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.interview-setup-page .setup-meta-item small {
+  font-size: 7px;
+}
+
+.interview-setup-page .setup-meta-item strong {
+  font-size: 10px;
+}
+
+.interview-setup-page .setup-section {
+  margin-bottom: 12px;
+}
+
+.interview-setup-page .section-heading {
+  margin-bottom: 7px;
+  gap: 8px;
+}
+
+.interview-setup-page .section-heading .eyebrow {
+  margin-bottom: 3px;
+  font-size: 8px;
+}
+
+.interview-setup-page .section-heading h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.interview-setup-page .section-heading p {
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.interview-setup-page .setup-form > .setup-section:first-child .setup-option {
+  min-height: 113px !important;
+  padding: 9px 7px 8px !important;
+}
+
+.interview-setup-page .setup-option {
+  min-height: 108px !important;
+  padding: 8px 8px 7px !important;
+  gap: 5px !important;
+  border-radius: 15px !important;
+}
+
+.interview-setup-page .setup-option-icon {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+}
+
+.interview-setup-page .setup-option-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.interview-setup-page .setup-option-content strong {
+  font-size: 14px !important;
+}
+
+.interview-setup-page .setup-option-content small {
+  margin-top: 2px !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+}
+
+.interview-setup-page .voice-select-button {
+  gap: 6px;
+}
+
+.interview-setup-page .voice-preview-button {
+  min-height: 28px;
+  padding: 3px 6px;
+  font-size: 10px;
+}
+
+.interview-setup-page .setup-actions {
+  margin-top: 4px;
+}
+
+.interview-setup-page .setup-actions .primary-btn {
+  min-height: 38px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.interview-setup-page .setup-actions p {
+  margin-top: 4px;
+  font-size: 9px;
+}
+
